@@ -48,7 +48,7 @@ The three rasters were cross tabulated (crosstab) in R terra and then converted 
 
 [Workflow for CFR IAT](Invasives_rebelo_wc.qmd)
 
-This workflow uses new data on invasive alien plant species distribution and abundance to assess the severity and extent of functional decline of terrestrial ecosystems in the Cape Floristic Region of South Africa (to support application of Criterion D of the Red List of Ecosystems v1.1). Rebelo et al. 2024 provided SANBI with a raster data set of invaded areas in the Cape Floristic Region (including a certainty band) [@rebelo].
+This workflow uses new data on invasive alien tree species distribution and abundance to assess the severity and extent of functional decline of terrestrial ecosystems in the Cape Floristic Region of South Africa (to support application of Criterion D of the Red List of Ecosystems v1.1). Rebelo et al. 2024 provided SANBI with a raster data set of invaded areas in the Cape Floristic Region (including a certainty band) [@rebelo].
 
 *Note the niaps script must be run prior to this script as it supplies a table of national remnants sizes*.
 
