@@ -118,8 +118,11 @@ niaps_lc_veg <- crosstab(c(lc2022,vegrast,niaps_aea_rc), useNA=TRUE) #ensure NA 
 niaps_lc_veg_values <- as_tibble(niaps_lc_veg) #save raw crosstab outputs
 write.csv(niaps_lc_veg_values, file = "outputs/niaps_lc_veg_values.csv") 
 
-#load values to avoid rerunning time consumming cross tab above
-#niaps_lc_veg_values <- read_csv("outputs/niaps_lc_veg_values.csv", show_col_types = FALSE)
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+#Start here: load values to avoid rerunning time consumming cross tab above
+
+niaps_lc_veg_values <- read_csv("outputs/niaps_lc_veg_values.csv", show_col_types = FALSE)
 
 #Rename columns and add km2 (cell size is 20x20m), and make adjustments to values as required
 niaps_lc_veg_tb <- niaps_lc_veg_values %>%
@@ -147,7 +150,7 @@ options(scipen = 999) #supress scientific notation
 vegrem_extent_in_sa <- niaps_lc_veg_tb %>% #remaining extent of each type
   filter(LC == 1) %>%  
   group_by(T_MAPCODE) %>%
-  summarise(sum_rem = sum(km2))
+  summarise(sumrem_sa = sum(km2))
   
 #Summarise extent invaded per veg type in three categories 1) severity 50% ~ niaps class 1-10; 2) severity 70% ~niaps class 4-10; 3) severity 90% ~ niaps class 6-10. Classes are based on a metric similar canopy cover (ie condensed extent / full extent * 100), so an area full invaded with only ias present is 100 (class 10).
 
@@ -161,19 +164,18 @@ niaps_veg_sum <- niaps_lc_veg_tb %>%
               values_fill = list(niaps_ext = 0)) %>%
   relocate(niaps_ch10, .after = niaps_ch9) %>%
   inner_join(vegrem_extent_in_sa, by = "T_MAPCODE") %>%
-mutate(niaps_ext50 = rowSums(across(c(niaps_ch1:niaps_ch10))/sum_rem)) %>%
-mutate(niaps_ext70 = rowSums(across(c(niaps_ch4:niaps_ch10))/sum_rem)) %>%
-mutate(niaps_ext90 = rowSums(across(c(niaps_ch6:niaps_ch10))/sum_rem)) %>%
-    mutate(YEAR = 2023)
-
-#write to a csv for use in RLE analysis
-write.csv(niaps_veg_sum, file = "outputs/pressures_data_for_rle_niaps.csv") 
-
-#test rle
-niaps_veg_sum_rle <- niaps_veg_sum %>%
-  mutate(D3 = case_when(niaps_ext90 >= 0.9 ~ "CR",
+mutate(niaps_ext50 = rowSums(across(c(niaps_ch1:niaps_ch10))/sumrem_sa)) %>%
+mutate(niaps_ext70 = rowSums(across(c(niaps_ch4:niaps_ch10))/sumrem_sa)) %>%
+mutate(niaps_ext90 = rowSums(across(c(niaps_ch6:niaps_ch10))/sumrem_sa)) %>%
+  mutate(D3test = case_when(niaps_ext90 >= 0.9 ~ "CR",
                         niaps_ext90 >= 0.7 | niaps_ext70 >= 0.9 ~ "EN",
                         niaps_ext90 >= 0.5 | niaps_ext70 >= 0.7 | 
                         niaps_ext50 >= 90 ~ "VU",
-                        TRUE ~ "LC"))
+                        TRUE ~ "LC")) %>%
+    mutate(YEAR = 2023)
+
+#write to a csv for use in RLE analysis
+write.csv(niaps_veg_sum, file = "outputs/data_for_rle_niaps.csv") 
+
+
 ```
