@@ -1,0 +1,179 @@
+### Workflow for using NIAPS 2023 data in RLE assessments for Criterion D3
+
+Date: 20250131
+
+Author: A.L. Skowno
+
+This workflow uses new data on invasive alien plant species distribution and abundance to assess the severity and extent of functional decline of terrestrial ecosystems in South Africa (to support application of Criterion D of the Red List of Ecosystems v1.1).
+
+The National Invasive Alien Plant Survey (NIAPS) run by the Department of Forestry, Fisheries and the Environment and Stellenbosch University (led by Dr Ian Kotze and Andrew Wanneburg), resulted in a series of raster datasets on distribution and abundance of selected taxa that are combined with national land cover and vegetation data to calculate the proportional invaded per ecosystem type (vegetation unit).
+
+```{r}
+#load packages  
+library(terra) 
+library(tidyverse)
+library(sf)
+library(PROJ)
+```
+
+### Data sources & import:
+
+1.  South African National Land Cover data set for 2022 (prepared by the National Department of Forestry, Fisheries and the Environment) were adjusted to have a common raster resolution (20m). The data were reclassified in ARCGIS PRO into seven classes: 1 = Natural; 2 = Secondary Natural, 3 = Artificial water bodies, 4 = Built up, 5 = Croplands, 6 = Mines, 7 = Plantation (SANBI pers com).
+
+2.  National Vegetation Map 2024 version, vector data (ESRI file geodatabase) January 2025 curated by SANBI [@rutherford2006; @Dayaram2019].
+
+3.  National Invasive Alien Plant Survey (NIAPS) (Kotze 2023) estimated the extent of the most-widespread & abundant, terrestrial invasive alien plant taxa (approx. 32 species) in South Africa. Data were downloaded from an ARCPRO package available here <https://dffeportal.environment.gov.za/portal/home/item.html?id=17de13c509ef4d3caf279d84e77312c3>. The data excludes invasions in transformed areas (i.e. cultivated, built-up & planted forest).  Each raster has pixel values (0-100) that are percentage of area invaded divided by condensed area invaded for 32 Invasive plant taxa organised into 13 rasters. Values of 100 represent 100% invasion (effectively 100% canopy cover of the specific invasive species)(see **Marais et al., 200**4 for explanation of the concept of "condensed area"). Note the data is unprojected (EPSG 4326).
+
+```{r}
+#Add land cover data  (note all LC products use  WGS84 Albers Equal Area, central meridian = 25; std parallel1 = -24; std parallel2 = -33). Use Tif version as this is processed faster by R terra.
+lc2022 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2022_7class.tif")
+
+# Add vegetation data
+veg <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_Change.gdb", "NVM2024Final_IEM5_12_07012025")  #ensure it uses proj =  wgs84 aea cm 25 -24 -33
+
+# to help differentiate masked areas (LES and SWA) from NON TERRESTRIAL areas add "NOTVEG" to T_MAPCODE where T_NAME = "Non-Terrestrial*"
+veg$T_MAPCODE <- ifelse(veg$T_Name == "Non-terrestrial (estuarine habitat)" | veg$T_Name == "Non-terrestrial (Aquatic)", "NOTVEG", veg$T_MAPCODE) 
+vegrast <- rasterize(veg,lc2022,"T_MAPCODE")
+#
+
+```
+
+```{r}
+#add invasive data : supplied by A. Wannenburg DFFE (public use) epsg 4326 (geographic)
+
+AcacCycl <- as.numeric(rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/Kotze_National_2024/data/commondata/raster_data/AcacCycl_CombAllplus.tif")) 
+AcacSali <- as.numeric(rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/Kotze_National_2024/data/commondata/raster_data/AcacSali_CombAllplus.tif")) 
+ArunDona <- as.numeric(rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/Kotze_National_2024/data/commondata/raster_data/ArunDona_CombAllplus.tif")) 
+ChroOdor <- as.numeric(rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/Kotze_National_2024/data/commondata/raster_data/ChroOdor_CombAllplus.tif")) 
+EucaSpec <- as.numeric(rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/Kotze_National_2024/data/commondata/raster_data/EucaSpec_CombAllplus.tif")) 
+HakeSpec <- as.numeric(rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/Kotze_National_2024/data/commondata/raster_data/HakeSpec_CombAllplus.tif")) 
+LantCama <- as.numeric(rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/Kotze_National_2024/data/commondata/raster_data/LantCama_CombAllplus.tif")) 
+MeliAzed <- as.numeric(rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/Kotze_National_2024/data/commondata/raster_data/MeliAzed_CombAllplus.tif")) 
+OpunSpec <- as.numeric(rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/Kotze_National_2024/data/commondata/raster_data/OpunSpec_CombAllplus.tif")) 
+PinuSpec <- as.numeric(rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/Kotze_National_2024/data/commondata/raster_data/PinuSpec_CombAllplus.tif")) 
+PopuSpec <- as.numeric(rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/Kotze_National_2024/data/commondata/raster_data/PopuSpec_CombAllplus.tif")) 
+ProsSpec <- as.numeric(rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/Kotze_National_2024/data/commondata/raster_data/ProsSpec_CombAllplus.tif")) 
+SolaMaur <- as.numeric(rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/Kotze_National_2024/data/commondata/raster_data/SolaMaur_CombAllplus.tif")) 
+WattSpec <- as.numeric(rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/Kotze_National_2024/data/commondata/raster_data/WattSpec_CombAllplus.tif")) 
+
+```
+
+#### Data preparation
+
+Each raster in the NIAPS dataset has values of 0-100, where 100 represents 100% invasive species canopy cover. Summing the rasters results in an overall invasive value for each pixel. Pixels with summed values greater than 100 are considered 100% invaded. The summed results are then binned into 10 invasion classes. TO proceed with analysis the summed invasive raster is then resampled to match the landcover data and vegetation data.
+
+```{r}
+# Stack then sum invasive rasters  
+niaps_stack <- c(AcacCycl,AcacSali,ArunDona, ChroOdor, EucaSpec, HakeSpec,
+           LantCama,MeliAzed,OpunSpec,PinuSpec,PopuSpec, ProsSpec,
+           SolaMaur, WattSpec)
+niaps <- sum(niaps_stack)
+#or use max # niaps <- app(niaps_stack, fun = max, na.rm = TRUE)
+
+# Project to ALbers snapped to LC2022
+niaps_aea <- project(niaps, lc2022, method = "near")
+
+# not sure why this is sometime required ... Resample to match extent of the land cover to allow for crosstabulation (the above project should sort this out but does not)
+#niaps_aea <- resample(niaps_aea, lc2022, method = "near")
+
+# Define reclassification bins - each row represents: [min, max, new_value]
+reclass_niaps <- matrix(c(
+  0, 1 , 0,
+  1, 10, 1,
+  10, 20, 2,
+  20, 30, 3,
+  30, 40, 4,
+  40, 50, 5, 
+  50, 60, 6, 
+  60, 70, 7, 
+  70, 80, 8, 
+  80, 90, 9, 
+  90, 200, 10
+), ncol = 3, byrow = TRUE)
+
+# Reclassify the summed invasives data using the matrix
+niaps_aea_rc <- classify(niaps_aea, rcl = reclass_niaps)
+
+```
+
+```{r}
+#START here when re runing - this extra code the above raster are written to disk and then imported. 
+writeRaster(niaps, "C:/GIS/TEMP/niaps.tif", datatype = "INT1U", gdal = c("COMPRESS=LZW"), overwrite = TRUE)
+writeRaster(vegrast, "C:/GIS/TEMP/vegrast.tif", datatype = "INT2S", gdal = c("COMPRESS=LZW"), overwrite = TRUE)
+
+# read in data
+lc2022 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2022_7class.tif")
+vegrast <- rast("C:/GIS/TEMP/vegrast.tif")
+niaps <- rast("C:/GIS/TEMP/niaps.tif")
+```
+
+#### Spatial Analysis
+
+Cross tabulate (R, terra) land cover (nlc2022_7class), NIAPS summed values for all taxa, and vegetation type rasters. Produce a summary table.
+
+```{r}
+#Crosstabulate invasives, land cover and vegetation data 
+#Convert raw output values to a tibble
+niaps_lc_veg <- crosstab(c(lc2022,vegrast,niaps_aea_rc), useNA=TRUE) #ensure NA areas included
+niaps_lc_veg_values <- as_tibble(niaps_lc_veg) #save raw crosstab outputs
+write.csv(niaps_lc_veg_values, file = "outputs/niaps_lc_veg_values.csv") 
+
+#load values to avoid rerunning time consumming cross tab above
+#niaps_lc_veg_values <- read_csv("outputs/niaps_lc_veg_values.csv", show_col_types = FALSE)
+
+#Rename columns and add km2 (cell size is 20x20m), and make adjustments to values as required
+niaps_lc_veg_tb <- niaps_lc_veg_values %>%
+  rename(sum_niaps = sum) %>%
+  rename(LC = nlc2022_7class) %>%
+  mutate(km2 = (n*400)/1000000) %>% # add extent 20x20m pixels
+  mutate(sum_niaps = ifelse(sum_niaps == "NaN", 0, sum_niaps)) %>% # make NaN = 0 (allows as.integer later)
+  filter(n !=0, T_MAPCODE != "NOTVEG") %>%
+  mutate(LC = as.integer(LC), sum_niaps = as.integer(sum_niaps)) #IMPORTANT to make integers othewise ifelse does not work correctly below!
+
+# # write output to csv for excel use
+write.csv(niaps_lc_veg_tb, file = "outputs/niaps_lc_veg_tb.csv")
+```
+
+#### Tabular Analysis
+
+Calculate key metrics of invasion for each vegetation type. Experiment with the how NIAPS values relate to severity of biotic disruption (values in NIAPS are condensed ha / total ha, similar to % canopy cover metrics).
+
+Test case: Where summed values are greater than 60 in NIAPS rasters then assume 90% severity, values over 40 assume 70% severity, values over 20 assume 50% severity of biotic disruption.
+
+```{r}
+options(scipen = 999) #supress scientific notation
+
+#prepare basic metrics on vegetation types
+vegrem_extent_in_sa <- niaps_lc_veg_tb %>% #remaining extent of each type
+  filter(LC == 1) %>%  
+  group_by(T_MAPCODE) %>%
+  summarise(sum_rem = sum(km2))
+  
+#Summarise extent invaded per veg type in three categories 1) severity 50% ~ niaps class 1-10; 2) severity 70% ~niaps class 4-10; 3) severity 90% ~ niaps class 6-10. Classes are based on a metric similar canopy cover (ie condensed extent / full extent * 100), so an area full invaded with only ias present is 100 (class 10).
+
+niaps_veg_sum <- niaps_lc_veg_tb %>%
+  filter(LC == 1, sum_niaps !=0) %>% # ensure only natural remnants included
+  group_by(T_MAPCODE, sum_niaps)  %>%
+  summarise(niaps_ext = sum( km2)) %>%
+ pivot_wider(names_from = sum_niaps, 
+              values_from = niaps_ext, 
+              names_prefix = "niaps_ch", 
+              values_fill = list(niaps_ext = 0)) %>%
+  relocate(niaps_ch10, .after = niaps_ch9) %>%
+  inner_join(vegrem_extent_in_sa, by = "T_MAPCODE") %>%
+mutate(niaps_ext50 = rowSums(across(c(niaps_ch1:niaps_ch10))/sum_rem)) %>%
+mutate(niaps_ext70 = rowSums(across(c(niaps_ch4:niaps_ch10))/sum_rem)) %>%
+mutate(niaps_ext90 = rowSums(across(c(niaps_ch6:niaps_ch10))/sum_rem)) %>%
+    mutate(YEAR = 2023)
+
+#write to a csv for use in RLE analysis
+write.csv(niaps_veg_sum, file = "outputs/pressures_data_for_rle_niaps.csv") 
+
+#test rle
+niaps_veg_sum_rle <- niaps_veg_sum %>%
+  mutate(D3 = case_when(niaps_ext90 >= 0.9 ~ "CR",
+                        niaps_ext90 >= 0.7 | niaps_ext70 >= 0.9 ~ "EN",
+                        niaps_ext90 >= 0.5 | niaps_ext70 >= 0.7 | 
+                        niaps_ext50 >= 90 ~ "VU",
+                        TRUE ~ "LC"))
+```

@@ -1,0 +1,158 @@
+---
+title: "RLE terrestial 2025 - D3 assessment using WC Invasive Alien Tree data"
+bibliography: references.bib
+lang: en-GB
+---
+
+### Overview of analysis:
+
+Exploring invasive woody plant data produced by Alanna Rebelo [@rebelo] for use in terrestrial Red List of Ecosystems a component of the National Biodiversity Assessment 2025.
+
+The extent and severity of invasive alien tree invasion can be used as a confirmation of "ongoing decline" in IUCN RLE 1.1 Criteria B1 and B2 assessments (restricted distribution), and in Criterion D assessment of functional declines (biotic disruption). Since the invasions by alien tree species are reported more than 50 years ago (**REF needed**), Criterion D3 was applied (disruption compared to a historic base line 1750). The approach follwed was to cross tabulate South Africa's national vegetation map (version 2024) (Dayaram et al., pers com) and the modified national land cover 2022 (Skowno et al., pers com) and the invasive data (Band 1) and confidence data (Band 2) developed by Rebel et al., 2024. The tabular outputs were then used to investigate the extent of invasion per vegetation unit (ecosystem type). Rebelo et al. followed a pure pixel approach and the resulting spatial data show areas of very high invasive alien tree density (over 80% canopy cover) for 5 Invasive Alien Tree (IAT) taxa and 1 general group (other). The severity of biotic disruption in pixels identified as invaded is estimated to be \>90%. Only pixels with certainty scores over 70% are included. **Research suggests that Fynbos ecosystems...**.. **(find references to support this based on shading, nutriet addition, fire regime disruption, competition for space, soil PH etc).** Non natural areas (croplands, old fields, built up areas , mines, dams and plantations) were masked out of the analysis, and only natural remaining vegetation patches were assessed as to their extent of invasion within the area of interest.
+
+```{r}
+#load packages  
+library(terra) 
+library(tidyverse)
+library(sf)
+library(PROJ)
+```
+
+### Data sources & import:
+
+1.  South African National Land Cover data set for 2022 (prepared by the National Department of Forestry, Fisheries and the Environment) were adjusted to have a common raster resolution (20m). The data were reclassified in ARCGIS PRO into seven classes: 1 = Natural; 2 = Secondary Natural, 3 = Artificial water bodies, 4 = Built up, 5 = Croplands, 6 = Mines, 7 = Plantation (SANBI pers com).
+
+2.  National Vegetation Map 2024 version, vector data (ESRI file geodatabase) January 2025 curated by SANBI [@rutherford2006; @Dayaram2019].
+
+3.  Map of key woody invasive alien plant taxa within the Cape Floristic Region. This classification was generated using Sentinel-2 satellite imagery at a 10 m resolution using a Random Forest machine learning classifier. The data is unprocessed and contain certainty information in Band 2 (values of 0-100) [@rebelo].
+
+```{r}
+#add invasive data : supplied by Alanna Rebelo (for use in RLE only)
+inv_raw <- rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/Rebelo Invasives WC/BioScape_IAT_Map_Certainty.tif")  #ensure it uses proj =  wgs84 aea cm 25 -24 -33
+
+# select band 1 save as  seperate layer with Values 1-6  for invasive taxa
+inv <- inv_raw[[1]]
+
+#reclassify  invasives data band 2 (certainty)  with values 0-100 into bins
+cert <- inv_raw[[2]]
+# Define reclassification bins
+# Each row represents: [min, max, new_value]
+reclass_matrix <- matrix(c(
+  0, 1, 0,
+  1, 10, 1,
+  10, 20, 2,
+  20, 30, 3,
+  30, 40, 4,
+  40, 50, 5, 
+  50, 60, 6, 
+  60, 70, 7, 
+  70, 80, 8, 
+  80, 90, 9, 
+  90, 100, 10
+), ncol = 3, byrow = TRUE)
+
+# Reclassify the band 2 using the matrix
+cert <- classify(cert, rcl = reclass_matrix)
+
+#Add land cover data  (note all LC products use  WGS84 Albers Equal Area, central meridian = 25; std parallel1 = -24; std parallel2 = -33). Use Tif version as this is processed faster by R terra.
+lc2022 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2022_7class.tif")
+lc2022 <- resample(lc2022, inv_raw, method = "near")
+
+# add vegetation data
+veg <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_Change.gdb", "NVM2024Final_IEM5_12_07012025")  #ensure it uses proj =  wgs84 aea cm 25 -24 -33
+
+# to help differentiate masked areas (LES and SWA) from NON TERRESTRIAL areas add "NOTVEG" to T_MAPCODE where T_NAME = "Non-Terrestrial*"
+veg$T_MAPCODE <- ifelse(veg$T_Name == "Non-terrestrial (estuarine habitat)" | veg$T_Name == "Non-terrestrial (Aquatic)", "NOTVEG", veg$T_MAPCODE) 
+vegrast <- rasterize(veg,inv,"T_MAPCODE")
+
+```
+
+### Spatial Analysis
+
+Cross tabulate the land cover, vegetation and invasive data to produce a value matrix - then convert this to a tibble (tidy table). Add extent (km2) based on pixel counts (pixels are 10mx10m). Add vegetation information (Biome, Name and full extent) to the table.
+
+```{r}
+#Crosstabulate invasives, land cover and vegegation data 
+#Convert raw output values to a tibble
+inv_lc_veg <- crosstab(c(lc2022,vegrast,inv, cert), useNA=TRUE) #ensure NA areas included
+inv_lc_veg_values <- as_tibble(inv_lc_veg) #save raw crosstab outputs
+write.csv(inv_lc_veg_values, file = "outputs/inv_wc_lc_veg_values.csv") 
+
+#load values to avoid rerunning time consumming cross tab above
+
+inv_lc_veg_values <- read_csv("outputs/inv_wc_lc_veg_values.csv", show_col_types = FALSE)
+
+#Rename columns and add km2 (cell size is 10x10m), and make adjustments to values as required
+inv_lc_veg_tb <- inv_lc_veg_values %>%
+  rename(IAT = BioScape_IAT_Map_Certainty_1, 
+         IAT_cert = BioScape_IAT_Map_Certainty_2) %>%
+  mutate(km2 = (n*100)/1000000) %>% # add extent 10x10m pixels
+  mutate(IAT = ifelse(IAT == "NaN", 0, IAT))%>% # make NaN = 0 (allows as.integer later)
+  rename(LC = nlc2022_7class) %>%
+  filter(n !=0, T_MAPCODE != "NOTVEG") %>%
+  mutate(LC = as.integer(LC), IAT = as.integer(IAT), IAT_cert = as.integer(IAT_cert)) #IMPORTANT to make integers othewise ifelse does not work correctly below!
+
+# # write output to csv for excel use
+write.csv(inv_lc_veg_tb, file = "outputs/inv_wc_lc_veg_tb.csv") 
+
+```
+
+### Summary statistics
+
+```{r}
+options(scipen = 999)
+# Calculate the the extent of IAT per vegetation unit, but only where : landcover is natural (LC = 1) and where IAT certainty  is greater than 50% (IAT_cert>2) and invasives have been recored (IAT =1). To ensure focus on AOI use IAT_cert != 0 this means outside of AOI. But note IAT = 0 simply means no invasives detected.
+
+vegrem_extent_in_aoi <- inv_lc_veg_tb %>%
+  filter(LC == 1 , IAT_cert != 0) %>% # only natural extent in the aoi. 
+  group_by(T_MAPCODE) %>%
+  summarise(sum_rem = sum(km2))
+  
+veg_extent_in_aoi <- inv_lc_veg_tb %>%
+  filter(IAT_cert != 0) %>% # full extent in aoi
+  group_by(T_MAPCODE) %>%
+  summarise(sum_aoi = sum(km2))
+ 
+inv_veg_sum <- inv_lc_veg_tb %>%
+  mutate(inv_deg = ifelse(IAT_cert > 6 & !is.na(IAT) & IAT != 0 & LC == 1, 1, 0)) %>% # add IAT not 0
+  # Experiment with this filter for certainty 50% -80% 
+    group_by(T_MAPCODE, inv_deg) %>%
+  summarise(sum_IAT = sum(km2)) %>%
+  filter(inv_deg  == 1, !is.na(T_MAPCODE), T_MAPCODE != "NOTVEG") %>%
+  inner_join(vegrem_extent_in_aoi, by = "T_MAPCODE") %>%
+  inner_join(veg_extent_in_aoi, by ="T_MAPCODE")
+
+# make a datatable from the veg, then extract full extent, Biome and Names 
+
+veg_tb <- as_tibble(veg)
+veg_tb <- veg_tb %>% 
+  select(c(T_MAPCODE, T_Name, T_BIOME, Shape_Area)) %>%
+    filter(T_MAPCODE != "NOTVEG" & T_MAPCODE != "") %>%
+  group_by(T_MAPCODE, T_Name, T_BIOME) %>%
+  summarise(type_km2 = sum(Shape_Area/1000000), .groups = 'drop')
+
+#add veg info and then calculate the proportion of the remnants in aoi that are invaded and the proportion of the vegtype that occurs in the aoi. 
+
+inv_veg_sum_results <- inv_veg_sum %>%
+  #inner_join(veg_tb, by = "T_MAPCODE") %>%
+  #mutate(prop_in_aoi = sum_aoi/type_km2) %>%
+  mutate(prop_inv = sum_IAT/sum_rem) %>%
+  mutate(prop_nat = sum_rem/sum_aoi) %>%
+  #relocate(T_Name, .after = T_MAPCODE) %>%
+  #relocate(T_BIOME, .after = T_Name) %>%
+  mutate(D3 = case_when(prop_inv >= 0.9 ~ "CR",
+                   prop_inv >= 0.7 ~ "EN",
+                   prop_inv >= 0.5 ~ "VU",
+                  TRUE ~ "LC")) # assuming severity is  > 90% for pure IAT pixels
+
+#  write output to csv for excel use
+write.csv(inv_veg_sum_results, file = "outputs/results_df_inv_wc_cert70_D3.csv") 
+
+summary_table <- inv_veg_sum_results %>%
+  group_by(D3) %>%
+  summarise(num_types = n_distinct(T_MAPCODE))
+
+# Using IAT_cert of over 70-100% and assuming 90-100% severity
+# = 8 CR, 5 EN and 5 VU types using D3. All types except 1 (plus two new types) 
+# already identifed as threatened by invasive using species redlist data 
+```
