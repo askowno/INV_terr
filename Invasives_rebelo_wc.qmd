@@ -101,6 +101,22 @@ write.csv(inv_lc_veg_tb, file = "outputs/inv_wc_lc_veg_tb.csv")
 
 ### Summary statistics
 
+The extent of IAT invasion in the remaining natural extent of each ecosystem type is then expressed as a proportion. This proportion together with an estimation of the Relative Severity of biotic disruption from the invasion allows for the applicaiton of Criterion D of the Red List of Ecosystems. The pure pixel apporach suggests that IAT pixels have a high relative severity of \>= 90%. If the invasions are thought to have occured more than 50years ago then Criterion D3 is applied, if the majority of the invasion is though to have occurred within the last 50years then Criterion D1 can be applied.
+
+|                              |               |               |               |
+|------------------------------|---------------|---------------|---------------|
+| Criterion D1                 | \>=80% extent | \>=50% extent | \>=30% extent |
+| **\>=80% relative severity** | **CR**        | **EN**        | **VU**        |
+| \>=50% relative severity     | EN            | VU            |               |
+| \>=30% relative severity     | VU            |               |               |
+
+|                              |               |               |               |
+|------------------------------|---------------|---------------|---------------|
+| Criterion D3                 | \>=90% extent | \>=70% extent | \>=50% extent |
+| **\>=90% relative severity** | **CR**        | **EN**        | **VU**        |
+| \>=70% relative severity     | EN            | VU            |               |
+| \>=50% relative severity     | VU            |               |               |
+
 ```{r}
 options(scipen = 999)
 # Calculate the the extent of IAT per vegetation unit, but only where : landcover is natural (LC = 1) and where IAT certainty  is greater than 50% (IAT_cert>2) and invasives have been recored (IAT =1). To ensure focus on AOI use IAT_cert != 0 this means outside of AOI. But note IAT = 0 simply means no invasives detected.
@@ -133,8 +149,12 @@ inv_veg_sum <- inv_lc_veg_tb %>%
   mutate(D3test = case_when(prop_inv >= 0.9 ~ "CR",
                    prop_inv >= 0.7 ~ "EN",
                    prop_inv >= 0.5 ~ "VU",
-                  TRUE ~ "LC")) %>% #  severity is  > 90% for pure IAT pixels
-   mutate(YEAR = 2023)
+                  TRUE ~ "LC")) %>% 
+  mutate(D1test = case_when(prop_inv >= 0.8 ~ "CR",
+                   prop_inv >= 0.5 ~ "EN",
+                   prop_inv >= 0.3 ~ "VU",
+                  TRUE ~ "LC")) %>% 
+     mutate(YEAR = 2023)
 
 #  write output to csv to hand over to RLE assessment (in the next step the proportion of each ecosystem )
 write.csv(inv_veg_sum, file = "outputs/data_for_rle_rebelo_invwc.csv") 

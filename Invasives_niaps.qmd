@@ -97,14 +97,14 @@ niaps_aea_rc <- classify(niaps_aea, rcl = reclass_niaps)
 ```
 
 ```{r}
-#START here when re runing - this extra code the above raster are written to disk and then imported. 
-writeRaster(niaps, "C:/GIS/TEMP/niaps.tif", datatype = "INT1U", gdal = c("COMPRESS=LZW"), overwrite = TRUE)
-writeRaster(vegrast, "C:/GIS/TEMP/vegrast.tif", datatype = "INT2S", gdal = c("COMPRESS=LZW"), overwrite = TRUE)
-
-# read in data
-lc2022 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2022_7class.tif")
-vegrast <- rast("C:/GIS/TEMP/vegrast.tif")
-niaps <- rast("C:/GIS/TEMP/niaps.tif")
+# #START here when re runing - this extra code the above raster are written to disk and then imported. 
+# writeRaster(niaps, "C:/GIS/TEMP/niaps.tif", datatype = "INT1U", gdal = c("COMPRESS=LZW"), overwrite = TRUE)
+# writeRaster(vegrast, "C:/GIS/TEMP/vegrast.tif", datatype = "INT2S", gdal = c("COMPRESS=LZW"), overwrite = TRUE)
+# 
+# # read in data
+# lc2022 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2022_7class.tif")
+# vegrast <- rast("C:/GIS/TEMP/vegrast.tif")
+# niaps <- rast("C:/GIS/TEMP/niaps.tif")
 ```
 
 #### Spatial Analysis
@@ -139,9 +139,17 @@ write.csv(niaps_lc_veg_tb, file = "outputs/niaps_lc_veg_tb.csv")
 
 #### Tabular Analysis
 
-Calculate key metrics of invasion for each vegetation type. Experiment with the how NIAPS values relate to severity of biotic disruption (values in NIAPS are condensed ha / total ha, similar to % canopy cover metrics).
+Calculate key metrics of invasion for each vegetation type. NIAPS values relate to severity of biotic disruption score require din the RLE Criterion D assessments. The underlying values in NIAPS are condensed ha / total ha, similar to % canopy cover metrics.
 
-Test case: Where summed values are greater than 60 in NIAPS rasters then assume 90% severity, values over 40 assume 70% severity, values over 20 assume 50% severity of biotic disruption.
+Where NIAPS class is \>6 then assume 90% severity, NIAPS class \> 5 then assume 80% severity, NIAPS class \> 4 then assume 70% severity , NIAPS class \> 1 then assume 50% severity , NIAPS class \> 0 then assume 30% severity.
+
+| NIAPS max (1-100) | NIAPS class (1-10) | Relative Severity of Disruption |
+|-------------------|--------------------|---------------------------------|
+| 1-100             | 1-10               | \>=30%                          |
+| 10-100            | 2-10               | \>=50%                          |
+| 40-100            | 5-10               | \>=70%                          |
+| 50-100            | 6-10               | \>=80%                          |
+| 60-100            | 7-10               | \>=90%                          |
 
 ```{r}
 options(scipen = 999) #supress scientific notation
@@ -152,7 +160,7 @@ vegrem_extent_in_sa <- niaps_lc_veg_tb %>% #remaining extent of each type
   group_by(T_MAPCODE) %>%
   summarise(sumrem_sa = sum(km2))
   
-#Summarise extent invaded per veg type in three categories 1) severity 50% ~ niaps class 1-10; 2) severity 70% ~niaps class 4-10; 3) severity 90% ~ niaps class 6-10. Classes are based on a metric similar canopy cover (ie condensed extent / full extent * 100), so an area full invaded with only ias present is 100 (class 10).
+#Summarise extent invaded per veg type in  categories used by RLE:  1) severity 30% ~ niaps class 1-10; 2) severity 50% ~niaps class 2-10; 3) severity 70% ~ niaps class 4-10;  4) severity 80% ~ niaps class 5-10;  5) severity 90% ~ niaps class 6-10. Classes are based on a metric similar canopy cover (ie condensed extent / full extent * 100), so an area full invaded with only ias present is 100 (class 10). For D1 thresholds are 80 50 30; for D3 they are 90 70 50. 
 
 niaps_veg_sum <- niaps_lc_veg_tb %>%
   filter(LC == 1, sum_niaps !=0) %>% # ensure only natural remnants included
@@ -164,13 +172,20 @@ niaps_veg_sum <- niaps_lc_veg_tb %>%
               values_fill = list(niaps_ext = 0)) %>%
   relocate(niaps_ch10, .after = niaps_ch9) %>%
   inner_join(vegrem_extent_in_sa, by = "T_MAPCODE") %>%
-mutate(niaps_ext50 = rowSums(across(c(niaps_ch1:niaps_ch10))/sumrem_sa)) %>%
-mutate(niaps_ext70 = rowSums(across(c(niaps_ch4:niaps_ch10))/sumrem_sa)) %>%
-mutate(niaps_ext90 = rowSums(across(c(niaps_ch6:niaps_ch10))/sumrem_sa)) %>%
+  mutate(niaps_ext30 = rowSums(across(c(niaps_ch1:niaps_ch10))/sumrem_sa)) %>%
+  mutate(niaps_ext50 = rowSums(across(c(niaps_ch2:niaps_ch10))/sumrem_sa)) %>%
+  mutate(niaps_ext70 = rowSums(across(c(niaps_ch5:niaps_ch10))/sumrem_sa)) %>%
+  mutate(niaps_ext80 = rowSums(across(c(niaps_ch6:niaps_ch10))/sumrem_sa)) %>%
+  mutate(niaps_ext90 = rowSums(across(c(niaps_ch7:niaps_ch10))/sumrem_sa)) %>%
   mutate(D3test = case_when(niaps_ext90 >= 0.9 ~ "CR",
                         niaps_ext90 >= 0.7 | niaps_ext70 >= 0.9 ~ "EN",
                         niaps_ext90 >= 0.5 | niaps_ext70 >= 0.7 | 
-                        niaps_ext50 >= 90 ~ "VU",
+                        niaps_ext50 >= 0.9 ~ "VU",
+                        TRUE ~ "LC")) %>%
+  mutate(D1test = case_when(niaps_ext80 >= 0.8 ~ "CR",
+                        niaps_ext80 >= 0.5 | niaps_ext50 >= 0.8 ~ "EN",
+                        niaps_ext80 >= 0.3 | niaps_ext50 >= 0.5 | 
+                        niaps_ext30 >= 0.8 ~ "VU",
                         TRUE ~ "LC")) %>%
     mutate(YEAR = 2023)
 
