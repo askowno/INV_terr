@@ -34,7 +34,9 @@ veg <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_Change.gdb", "NVM20
 # to help differentiate masked areas (LES and SWA) from NON TERRESTRIAL areas add "NOTVEG" to T_MAPCODE where T_NAME = "Non-Terrestrial*"
 veg$T_MAPCODE <- ifelse(veg$T_Name == "Non-terrestrial (estuarine habitat)" | veg$T_Name == "Non-terrestrial (Aquatic)", "NOTVEG", veg$T_MAPCODE) 
 vegrast <- rasterize(veg,lc2022,"T_MAPCODE")
-#
+
+# load EOO and AOO for Criterion B assessment (ongoing decline)
+eoo <- read_csv("C:/Rdata/RLE_terr/outputs/EOO_AOO_from_redlistr.csv")
 
 ```
 
@@ -93,6 +95,8 @@ reclass_niaps <- matrix(c(
 
 # Reclassify the summed invasives data using the matrix
 niaps_aea_rc <- classify(niaps_aea, rcl = reclass_niaps)
+
+
 
 ```
 
