@@ -184,7 +184,16 @@ niaps_veg_sum <- niaps_lc_veg_tb %>%
                         niaps_ext90 >= 0.5 | niaps_ext70 >= 0.7 | 
                         niaps_ext50 >= 0.9 ~ "VU",
                         TRUE ~ "LC")) %>%
-      mutate(YEAR = 2023)
+        left_join(eoo, "T_MAPCODE") %>%
+  mutate(B1i_niaps = case_when(EOO <= 2000 & niaps_ext70 >= 0.3 ~ "CR", 
+                                  EOO <= 20000 & niaps_ext70 >= 0.3 ~ "EN", 
+                                  EOO <= 50000 & niaps_ext70 >= 0.3 ~ "VU", 
+                                  TRUE ~ "LC")) %>%
+  mutate(B2i_niaps = case_when(AOO <= 2 & niaps_ext70 >= 0.3 ~ "CR", 
+                                  AOO <= 20 & niaps_ext70 >= 0.3 ~ "EN", 
+                                  AOO <= 50 & niaps_ext70 >= 0.3 ~ "VU", 
+                                  TRUE ~ "LC"))
+
 
 #write to a csv for use in RLE analysis
 write.csv(niaps_veg_sum, file = "outputs/data_for_rle_niaps.csv") 

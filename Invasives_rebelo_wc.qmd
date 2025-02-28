@@ -65,6 +65,8 @@ veg <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_Change.gdb", "NVM20
 veg$T_MAPCODE <- ifelse(veg$T_Name == "Non-terrestrial (estuarine habitat)" | veg$T_Name == "Non-terrestrial (Aquatic)", "NOTVEG", veg$T_MAPCODE) 
 vegrast <- rasterize(veg,inv,"T_MAPCODE")
 
+# load EOO and AOO for Criterion B assessment (ongoing decline)
+eoo <- read_csv("C:/Rdata/RLE_terr/outputs/EOO_AOO_from_redlistr.csv")
 ```
 
 ### Spatial Analysis
@@ -141,20 +143,24 @@ inv_veg_sum <- inv_lc_veg_tb %>%
        group_by(T_MAPCODE, inv_deg) %>%
   summarise(sum_IAT = sum(km2)) %>%
   filter(inv_deg  == 1, !is.na(T_MAPCODE), T_MAPCODE != "NOTVEG") %>%
-  inner_join(vegrem_extent_in_aoi, by = "T_MAPCODE") %>%
-  inner_join(veg_extent_in_aoi, by ="T_MAPCODE") %>%
-  inner_join(vegrem_extent_in_sa, by = "T_MAPCODE") %>% # from niaps workflow
+  left_join(vegrem_extent_in_aoi, by = "T_MAPCODE") %>%
+  left_join(veg_extent_in_aoi, by ="T_MAPCODE") %>%
+  left_join(vegrem_extent_in_sa, by = "T_MAPCODE") %>% # from niaps workflow
   mutate(prop_rem_aoi = sumrem_aoi/sumrem_sa) %>% # check how much of type is in AOI
   mutate(prop_inv = sum_IAT/sumrem_sa) %>%
-  mutate(D3test = case_when(prop_inv >= 0.9 ~ "CR",
+  mutate(D3_cfr_iat = case_when(prop_inv >= 0.9 ~ "CR",
                    prop_inv >= 0.7 ~ "EN",
                    prop_inv >= 0.5 ~ "VU",
-                  TRUE ~ "LC")) %>% 
-  mutate(D1test = case_when(prop_inv >= 0.8 ~ "CR",
-                   prop_inv >= 0.5 ~ "EN",
-                   prop_inv >= 0.3 ~ "VU",
-                  TRUE ~ "LC")) %>% 
-     mutate(YEAR = 2023)
+                  TRUE ~ "LC")) %>%
+  left_join(eoo, "T_MAPCODE") %>%
+  mutate(B1i_cfr_iat = case_when(EOO <= 2000 & prop_inv >= 0.3 ~ "CR", 
+                                  EOO <= 20000 & prop_inv >= 0.3 ~ "EN", 
+                                  EOO <= 50000 & prop_inv >= 0.3 ~ "VU", 
+                                  TRUE ~ "LC")) %>%
+  mutate(B2i_cfr_iat = case_when(AOO <= 2 & prop_inv >= 0.3 ~ "CR", 
+                                  AOO <= 20 & prop_inv >= 0.3 ~ "EN", 
+                                  AOO <= 50 & prop_inv >= 0.3 ~ "VU", 
+                                  TRUE ~ "LC"))
 
 #  write output to csv to hand over to RLE assessment (in the next step the proportion of each ecosystem )
 write.csv(inv_veg_sum, file = "outputs/data_for_rle_rebelo_invwc.csv") 
