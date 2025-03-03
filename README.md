@@ -20,17 +20,27 @@ a)  National Invasive Alien Plant survey data (Kotze 2023) supplied by DFFE (And
 
 b)  Western Cape Invasive Alien Tree survey (Rebelo 2024)
 
+``` mermaid
+flowchart LR; 
+A[Land cover change data ARCGIS] --> B[INV_terr/Invasives_niaps.qmd] --> C(INV_terr/outputs/data_for_rle_niaps.csv) --> D[RLE D3 results]; 
+E[National Invasive Alien Plant Survey] --> B; 
+F[Vegetation map ARCGIS] --> B; 
+G[CFR Invasive Alien Tree Survey] --> H[INV_terr/Invasives_rebelo_wc.qmd] --> I(INV_terr/outputs/data_for_rle_rebelo_invwc.csv) --> D; 
+A --> H; 
+F --> H;
+```
+
 ------------------------------------------------------------------------
 
 ### Workflow for using NIAPS 2023 data in RLE assessments for Criterion D3
 
-[Workflow for NIAPS](Invasives_niaps.qmd)
+[Workflow for NIAPS (Invasives_niaps.qmd)](Invasives_niaps.qmd)
 
 This workflow uses new data on invasive alien plant species distribution and abundance to assess the severity and extent of functional decline of terrestrial ecosystems in South Africa (to support application of Criterion D of the Red List of Ecosystems v1.1).
 
 The National Invasive Alien Plant Survey (NIAPS) run by the Department of Forestry, Fisheries and the Environment and Stellenbosch University (led by Dr Ian Kotze and Andrew Wanneburg), resulted in a series of raster datasets on distribution and abundance of selected taxa.
 
-*This script must be run before the Western Cape analysis can be run as it supplies a table of naitonal remnant size.*
+*This script must be run before the Western Cape analysis can be run as it supplies a table of national remnant size.*
 
 **Data sources & import:**
 
@@ -46,7 +56,7 @@ The three rasters were cross tabulated (crosstab) in R terra and then converted 
 
 ### Workflow for using Cape Floristic Region IAT survey in RLE assessments for Criterion D3
 
-[Workflow for CFR IAT](Invasives_rebelo_wc.qmd)
+[Workflow for CFR IAT (Invasives_rebelo_wc.qmd)](Invasives_rebelo_wc.qmd)
 
 This workflow uses new data on invasive alien tree species distribution and abundance to assess the severity and extent of functional decline of terrestrial ecosystems in the Cape Floristic Region of South Africa (to support application of Criterion D of the Red List of Ecosystems v1.1). Rebelo et al. 2024 provided SANBI with a raster data set of invaded areas in the Cape Floristic Region (including a certainty band) [@rebelo].
 
