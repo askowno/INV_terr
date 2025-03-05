@@ -12,7 +12,7 @@ February 2025
 
 #### Summary
 
-Workflows for including invasive alien plant distribution and abundance data into ecosystem assessments for terrestrial ecosystems in South Africa. Part of the National Biodiversity Assessment 2025 led by the South African National Biodiversity Institute (SANBI). Each dataset on invasive alien density and distribution is crosstabulated (using the R terra package) with national land cover and national vegetation map data, resulting in tabular outputs that include the severity and extent of IAP per vegetation type. These outputs are then used in the Red List of Ecosystems assessment workflow in order to assess Criterion D (biotic disruption - functional decline) and to provide evidence of "ongoing decline" require in Criterion B assessments (limited distribution with ongoing decline).
+Workflows for including invasive alien plant distribution and abundance data into ecosystem assessments for terrestrial ecosystems in South Africa. Part of the National Biodiversity Assessment 2025 led by the South African National Biodiversity Institute (SANBI). Each data set on invasive alien density and distribution is cross-tabulated (using the R terra package) with national land cover and national vegetation map data, resulting in tabular outputs that include the severity and extent of IAP per vegetation type. These outputs are then used in the Red List of Ecosystems assessment workflow in order to assess Criterion D (biotic disruption - functional decline) and to provide evidence of "ongoing decline" require in Criterion B assessments (limited distribution with ongoing decline).
 
 Data included:
 
