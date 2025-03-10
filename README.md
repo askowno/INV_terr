@@ -12,9 +12,9 @@ Workflows for including invasive alien plant distribution and abundance data int
 
 Data included:
 
-a)  National Invasive Alien Plant survey data (Kotze 2023) supplied by DFFE (Andrew Wannenburg)
+a)  National Invasive Alien Plant survey data ([Kotze et al., 2025](https://doi.org/10.1007/s10530-025-03558-9)) supplied by DFFE (Andrew Wannenburg)
 
-b)  Western Cape Invasive Alien Tree survey (Rebelo 2024)
+b)  Western Cape Invasive Alien Tree survey ([Rebelo et al., 2024](https://figshare.com/s/4ff827112e4d7edf6293))
 
 ``` mermaid
 flowchart LR; 
@@ -44,7 +44,7 @@ The National Invasive Alien Plant Survey (NIAPS) run by the Department of Forest
 
 2.  National Vegetation Map 2024 version 012025 vector data (ESRI file geodatabase), curated by SANBI was imported and then converted to a raster, snapped to the extent of the land cover.
 
-3.  National Invasive Alien Plant Survey (NIAPS) (Kotze 2023) estimated the extent of the most-widespread & abundant, terrestrial invasive alien plant taxa (approx. 32 taxa) in South Africa. Data were downloaded from an ARCPRO package available [here](https://dffeportal.environment.gov.za/portal/home/item.html?id=17de13c509ef4d3caf279d84e77312c3). Each raster has pixel values (0-100) that are percentage of area invaded divided by condensed area invaded for 32 Invasive plant taxa organised into 13 rasters. Values of 100 represent 100% invasion (effectively 100% canopy cover of the specific invasive species)(see [Marais et al., 2004](https://journals.co.za/doi/abs/10.10520/EJC96205) for an explanation of the concept of "condensed area"). These rasters were stacked and the maximum value for each pixel was extracted. The raster was then projected to match extent, resolution and origin of the land cover data.
+3.  National Invasive Alien Plant Survey (NIAPS) (Koptze et al., 2025) estimated the extent of the most-widespread & abundant, terrestrial invasive alien plant taxa (approx. 32 taxa) in South Africa. Data were downloaded from an ARCPRO package available [here](https://dffeportal.environment.gov.za/portal/home/item.html?id=17de13c509ef4d3caf279d84e77312c3). Each raster has pixel values (0-100) that are percentage of area invaded divided by condensed area invaded for 32 Invasive plant taxa organised into 13 rasters. Values of 100 represent 100% invasion (effectively 100% canopy cover of the specific invasive species)(see [Marais et al., 2004](https://journals.co.za/doi/abs/10.10520/EJC96205) for an explanation of the concept of "condensed area"). These rasters were stacked and the maximum value for each pixel was extracted. The raster was then projected to match extent, resolution and origin of the land cover data.
 
 **Spatial Analysis**
 
