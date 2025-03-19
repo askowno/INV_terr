@@ -69,20 +69,21 @@ mapwap_values <- read_csv("outputs/mapwap_values.csv", show_col_types = FALSE)
 
 #Rename columns and add km2 (cell size is 10x10m), and make adjustments to values as required
 mapwap_tb <- mapwap_values %>%
-  mutate(km2 = (n*100)/1000000) %>% # add extent 10x10m pixels
-  mutate(IAT = ifelse(IAT == "NaN", 0, IAT))%>% # make NaN = 0 (allows as.integer later)
+  mutate(km2 = (n*400)/1000000) %>% # add extent 10x10m pixels
+  mutate(mapwaps = ifelse(mapwaps2 == "NaN", 0, mapwaps2)) %>% # make NaN = 0 (allows as.integer later)
   rename(LC = nlc2022_7class) %>%
-  filter(n !=0, T_MAPCODE != "NOTVEG") %>%
-  mutate(LC = as.integer(LC), IAT = as.integer(IAT), IAT_cert = as.integer(IAT_cert)) #IMPORTANT to make integers othewise ifelse does not work correctly below!
+  filter(n != 0, T_MAPCODE != "NOTVEG", !is.na(LC)) %>%
+  mutate(LC = as.integer(LC), mapwaps = as.integer(mapwaps)) %>% #IMPORTANT to make integers othewise ifelse does not work correctly below!
+  select(-mapwaps2)
 
 # # write output to csv for excel use
-write.csv(inv_lc_veg_tb, file = "outputs/inv_wc_lc_veg_tb.csv") 
+write.csv(inv_lc_veg_tb, file = "outputs/mapwap_tb.csv") 
 
 ```
 
 ### Summary statistics
 
-The extent of IAT invasion in the remaining natural extent of each ecosystem type is then expressed as a proportion. This proportion together with an estimation of the Relative Severity of biotic disruption from the invasion allows for the applicaiton of Criterion D of the Red List of Ecosystems. The pure pixel apporach suggests that IAT pixels have a high relative severity of \>= 90%. If the invasions are thought to have occured more than 50years ago then Criterion D3 is applied, if the majority of the invasion is though to have occurred within the last 50years then Criterion D1 can be applied.
+The extent of inavasive alien plants within each ecosystem type is then expressed as a proportion. This proportion together with an estimation of the Relative Severity of biotic disruption from the invasion allows for the application of Criterion D of the Red List of Ecosystems. The remote sensing approach used suggests that areas must have high desnity of alien plants to be classified as invaded, so it is reasonable to assume pixels coded as invaded have a high relative severity of disruption (\~80%). If the invasions are thought to have occurred more than 50years ago then Criterion D3 should applied, if the majority of the invasion is though to have occurred within the last 50years then Criterion D1 should be applied.
 
 |                              |               |               |               |
 |------------------------------|---------------|---------------|---------------|
@@ -91,57 +92,53 @@ The extent of IAT invasion in the remaining natural extent of each ecosystem typ
 | \>=50% relative severity     | EN            | VU            |               |
 | \>=30% relative severity     | VU            |               |               |
 
-|                              |               |               |               |
-|------------------------------|---------------|---------------|---------------|
-| Criterion D3                 | \>=90% extent | \>=70% extent | \>=50% extent |
-| **\>=90% relative severity** | **CR**        | **EN**        | **VU**        |
-| \>=70% relative severity     | EN            | VU            |               |
-| \>=50% relative severity     | VU            |               |               |
-
 ```{r}
 options(scipen = 999)
-# Calculate the the extent of IAT per vegetation unit, but only where : landcover is natural (LC = 1) and where IAT certainty  is greater than 50% (IAT_cert>2) and invasives have been recored (IAT =1). To ensure focus on AOI use IAT_cert != 0 this means outside of AOI. But note IAT = 0 simply means no invasives detected.
+# Calculate the the extent of IAT per vegetation unit, but only where : landcover is natural (LC = 1) and invasives have been recored (IAT =1).
 
-vegrem_extent_in_aoi <- inv_lc_veg_tb %>%
-  filter(LC == 1 , IAT_cert != 0) %>% # only natural extent in the aoi. 
+veg_extent_in_sa <- mapwap_tb %>% # extent of each type in sa
   group_by(T_MAPCODE) %>%
-  summarise(sumrem_aoi = sum(km2))
+  summarise(sum_sa = sum(km2))
+
+vegrem_extent_in_sa <- mapwap_tb %>% # remaining natural extent in sa
+  filter( LC == 1) %>% 
+  group_by(T_MAPCODE) %>%
+  summarise(sumrem_sa = sum(km2))
   
-veg_extent_in_aoi <- inv_lc_veg_tb %>%
-  filter(IAT_cert != 0) %>% # full extent in aoi
+veg_extent_in_aoi <- mapwap_tb %>% #full extent in aoi
+  filter(mapwaps < 99) %>%  
   group_by(T_MAPCODE) %>%
   summarise(sum_aoi = sum(km2))
- 
-# identify invaded areas with high certainty estimates, then summarise and work out prop of natural remaining vegetation that is invaded. This script requires that cript for niaps (Invasives_niaps.qmd) has already been run to produce the table "vegrem_extent_in_sa"
 
-inv_veg_sum <- inv_lc_veg_tb %>%
-  mutate(inv_deg = ifelse(IAT_cert > 5 & # could adjust IAT_cert up to 6 (>50% cert)
-                           !is.na(IAT) &
-                           IAT != 0 & # count only invaded areas
-                           LC == 1, 1, 0)) %>% # count only invasion in natural veg
+
+ 
+# identify invaded areas, then summarise and work out prop  invaded. 
+
+mapwap_sum <- mapwap_tb %>%
+  mutate(inv_deg = ifelse(mapwaps == 8 & LC ==1,1,0)) %>%  # count only invasion in natural veg
        group_by(T_MAPCODE, inv_deg) %>%
-  summarise(sum_IAT = sum(km2)) %>%
-  filter(inv_deg  == 1, !is.na(T_MAPCODE), T_MAPCODE != "NOTVEG") %>%
-  left_join(vegrem_extent_in_aoi, by = "T_MAPCODE") %>%
+  summarise(sum_IAP = sum(km2)) %>%
+  filter(inv_deg  == 1) %>%
+  left_join(vegrem_extent_in_sa, by = "T_MAPCODE") %>%
   left_join(veg_extent_in_aoi, by ="T_MAPCODE") %>%
-  left_join(vegrem_extent_in_sa, by = "T_MAPCODE") %>% # from niaps workflow
-  mutate(prop_rem_aoi = sumrem_aoi/sumrem_sa) %>% # check how much of type is in AOI
-  mutate(prop_inv = sum_IAT/sumrem_sa) %>%
-  mutate(D3_cfr_iat = case_when(prop_inv >= 0.9 ~ "CR",
-                   prop_inv >= 0.7 ~ "EN",
-                   prop_inv >= 0.5 ~ "VU",
+  left_join(veg_extent_in_sa, by = "T_MAPCODE") %>% # from niaps workflow
+  mutate(prop_in_aoi = sum_aoi/sum_sa) %>% # check how much of type is in AOI
+  mutate(prop_inv = sum_IAP/sumrem_sa) %>%
+  mutate(D1_mapwaps = case_when(prop_inv >= 0.8 ~ "CR",
+                   prop_inv >= 0.5 ~ "EN",
+                   prop_inv >= 0.3 ~ "VU",
                   TRUE ~ "LC")) %>%
   left_join(eoo, "T_MAPCODE") %>%
-  mutate(B1i_cfr_iat = case_when(EOO <= 2000 & prop_inv >= 0.3 ~ "CR", 
+  mutate(B1i_mapwaps = case_when(EOO <= 2000 & prop_inv >= 0.3 ~ "CR", 
                                   EOO <= 20000 & prop_inv >= 0.3 ~ "EN", 
                                   EOO <= 50000 & prop_inv >= 0.3 ~ "VU", 
                                   TRUE ~ "LC")) %>%
-  mutate(B2i_cfr_iat = case_when(AOO <= 2 & prop_inv >= 0.3 ~ "CR", 
+  mutate(B2i_mapwaps = case_when(AOO <= 2 & prop_inv >= 0.3 ~ "CR", 
                                   AOO <= 20 & prop_inv >= 0.3 ~ "EN", 
                                   AOO <= 50 & prop_inv >= 0.3 ~ "VU", 
                                   TRUE ~ "LC"))
 
 #  write output to csv to hand over to RLE assessment (in the next step the proportion of each ecosystem )
-write.csv(inv_veg_sum, file = "outputs/data_for_rle_rebelo_invwc.csv") 
+write.csv(inv_veg_sum, file = "outputs/data_for_rle_mapwaps.csv") 
 
 ```
