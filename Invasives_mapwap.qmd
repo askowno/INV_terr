@@ -8,7 +8,7 @@ lang: en-GB
 
 Exploring invasive alein plant data produced by the MAPWAPS project ([@cogill; @cogilla; @skosana; @skosanaa]) for use in terrestrial Red List of Ecosystems - a component of the National Biodiversity Assessment 2025.
 
-The extent and severity of invasive alien plant invasions can be used as a confirmation of "ongoing decline" in IUCN RLE 1.1 Criteria B1 and B2 assessments (restricted distribution), and in Criterion D assessment of functional declines (biotic disruption). Since the invasions by alien plant species were reported more than 50 years ago ([@macdonald1984]), Criterion D3 was applied (disruption compared to a historic base line 1750). The approach followed was to cross tabulate South Africa's national vegetation map (version 2024) (SANBI, 2025) and the modified national land cover 2022 (SANBI, 2024) and alien plant species occurrence data from the MAPWAPS project ([@skosana], [@cogill], [@skosanaa] , [@cogilla] ) .
+The extent and severity of invasive alien plant invasions can be used as a confirmation of "ongoing decline" in IUCN RLE 1.1 Criteria B1 and B2 assessments (restricted distribution), and in Criterion D assessment of functional declines (biotic disruption). Criterion D1 was applied (disruption in the last 50 years). The approach followed was to cross tabulate South Africa's national vegetation map (version 2024) (SANBI, 2025) and the modified national land cover 2022 (SANBI, 2024) and alien plant species occurrence data from the MAPWAPS project ([@skosana], [@cogill], [@skosanaa] , [@cogilla] ) .
 
 The severity of biotic disruption in pixels identified as invaded is estimated to be \>80%. Non natural areas (croplands, old fields, built up areas , mines, dams and plantations) were masked out of the analysis, and only natural remaining vegetation patches were assessed as to their extent of invasion within the area of interest.
 
@@ -26,7 +26,7 @@ library(PROJ)
 
 2.  National Vegetation Map 2024 version, vector data (ESRI file geodatabase) January 2025 curated by SANBI ([@Dayaram2019])
 
-3.  Map of key invasive alien plant taxa within Mzimvubu, Tugela, Sabie-Crocodile and Luvuvhu catchment areas collected as part of the MAPWAPS program ([@skosana], [@cogill], [@skosanaa] , [@cogilla] ). This classification was generated using Sentinel-2 satellite imagery at a 10 m resolution using a Gradient Tree Boost (GTB) classification. The data were pre processed in ARCGIS PRO, where an attribute \[mapwap\] was added to each dataset. Where LUCL = Alien\* the value 8 was assigned, otherwise the value 0. This allows for determination of invaded areas and other areas within the area of interest. The shapefiles for Luvuhvu and and Sabie-Crocodile were projected from UTM36S to UTM35S, and then all four were merged into a sibgle shapefile mapwaps.shp. this was then rasterized (using mapwap attribute) and snapped to the national land cover grid 2022 (including reprojection from UTM to Albers Equal Area to match national land cover and vegetation data).
+3.  Map of key invasive alien plant taxa within Mzimvubu, Tugela, Sabie-Crocodile and Luvuvhu catchment areas collected as part of the MAPWAPS program ([@skosana], [@cogill], [@skosanaa] , [@cogilla] ). This classification was generated using Sentinel-2 satellite imagery at a 10 m resolution using a Gradient Tree Boost (GTB) classification. The data were pre processed in ARCGIS PRO, where an attribute \[mapwaps\] was added to each data set. Where LUCL = Alien\* the value 8 was assigned, otherwise the value 0. This allows for determination of invaded areas and other areas within the area of interest. The shapefiles for Luvuhvu and and Sabie-Crocodile were projected from UTM36S to UTM35S, and then all four were merged into a single shapefile mapwaps.shp. this was then rasterized (using mapwaps attribute) and snapped to the national land cover grid 2022 (including re-projection from UTM to Albers Equal Area to match national land cover and vegetation data).
 
 ```{r}
 #add invasive data : supplied by Coghill and Skosana (for use in RLE only)
@@ -52,7 +52,7 @@ eoo <- read_csv("C:/Rdata/RLE_terr/outputs/EOO_AOO_from_redlistr.csv")
 
 ### Spatial Analysis
 
-Cross tabulate the land cover, vegetation and invasive data to produce a value matrix - then convert this to a tibble (tidy table). Add extent (km2) based on pixel counts (pixels are 10mx10m). Add vegetation information (Biome, Name and full extent) to the table.
+Cross tabulate the land cover, vegetation and invasive data to produce a value matrix - then convert this to a tibble (tidy table). Add extent (km2) based on pixel counts (pixels are 20mx20m). Add vegetation information (Biome, Name and full extent) to the table.
 
 ```{r}
 #Crosstabulate invasives, land cover and vegegation data 
@@ -83,7 +83,7 @@ write.csv(inv_lc_veg_tb, file = "outputs/mapwap_tb.csv")
 
 ### Summary statistics
 
-The extent of inavasive alien plants within each ecosystem type is then expressed as a proportion. This proportion together with an estimation of the Relative Severity of biotic disruption from the invasion allows for the application of Criterion D of the Red List of Ecosystems. The remote sensing approach used suggests that areas must have high desnity of alien plants to be classified as invaded, so it is reasonable to assume pixels coded as invaded have a high relative severity of disruption (\~80%). If the invasions are thought to have occurred more than 50years ago then Criterion D3 should applied, if the majority of the invasion is though to have occurred within the last 50years then Criterion D1 should be applied.
+The extent of invasive alien plants within each ecosystem type is then expressed as a proportion. This proportion together with an estimation of the Relative Severity of biotic disruption from the invasion allows for the application of Criterion D of the Red List of Ecosystems. The remote sensing approach used suggests that areas must have high density of alien plants to be classified as invaded, so it is reasonable to assume pixels coded as invaded have a high relative severity of disruption (\~80%). If the majority of the invasion is though to have occurred within the last 50 years then Criterion D1 should be applied.
 
 |                              |               |               |               |
 |------------------------------|---------------|---------------|---------------|
@@ -94,7 +94,7 @@ The extent of inavasive alien plants within each ecosystem type is then expresse
 
 ```{r}
 options(scipen = 999)
-# Calculate the the extent of IAT per vegetation unit, but only where : landcover is natural (LC = 1) and invasives have been recored (IAT =1).
+# Calculate the the extent of IAT per vegetation unit, but only where : landcover is natural (LC = 1) and invasives have been recorded (IAT =1).
 
 veg_extent_in_sa <- mapwap_tb %>% # extent of each type in sa
   group_by(T_MAPCODE) %>%
