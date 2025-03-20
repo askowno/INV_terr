@@ -133,7 +133,7 @@ veg_extent_in_aoi <- inv_lc_veg_tb %>%
   group_by(T_MAPCODE) %>%
   summarise(sum_aoi = sum(km2))
  
-# identify invaded areas with high certainty estimates, then summarise and work out prop of natural remaining vegetation that is invaded. This script requires that cript for niaps (Invasives_niaps.qmd) has already been run to produce the table "vegrem_extent_in_sa"
+# identify invaded areas with high certainty estimates, then summarise and work out prop of natural remaining vegetation that is invaded. 
 
 inv_veg_sum <- inv_lc_veg_tb %>%
   mutate(inv_deg = ifelse(IAT_cert > 5 & # could adjust IAT_cert up to 6 (>50% cert)
