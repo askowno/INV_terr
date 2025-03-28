@@ -33,7 +33,7 @@ K[MAPWAPS IAP Survey] --> J[INV_terr/Invasives_mapwap.qmd] --> L(Inv_terr/output
 
 ------------------------------------------------------------------------
 
-### Workflow for using NIAPS 2023 data in RLE assessments for Criterion D3
+### 1. Workflow for using NIAPS 2023 data in RLE assessments for Criterion D3
 
 [Workflow for NIAPS (Invasives_niaps.qmd)](Invasives_niaps.qmd)
 
@@ -53,7 +53,7 @@ The National Invasive Alien Plant Survey (NIAPS) run by the Department of Forest
 
 The three rasters were cross tabulated (crosstab) in R terra and then converted to a [table](outputs/niaps_lc_veg_tb.csv) . This table was then summarised to produce the per vegetation type metrics of severity and extent of biotic disruption (by IAP) that are required by the RLE Criterion D assessments [(summary of NIAPS per vegetation type)](outputs/data_for_rle_niaps.csv)
 
-### Workflow for using Cape Floristic Region IAT survey in RLE assessments for Criterion D3
+### 2. Workflow for using Cape Floristic Region IAT survey in RLE assessments for Criterion D3
 
 [Workflow for CFR IAT (Invasives_rebelo_wc.qmd)](Invasives_rebelo_wc.qmd)
 
@@ -71,7 +71,7 @@ This workflow uses new data on invasive alien tree species distribution and abun
 
 The land cover and vegetation were resmapled to match the extent, origin and resolution of the IAT data., and then all the rasters were cross tabulated (crosstab) in R terra and then converted to a [table](output/inv_wc_lc_veg_tb.csv). This table was then summarised to produce the per vegetation type metrics of severity and extent of biotic distruption (by IAT) that are required by the RLE Criterion D assessments ([summary of CFR IAT cover per vegetation type](outputs/data_for_rle_rebelo_invwc.csv)).
 
-### Workflow for using MAPWAPS survey data in RLE assessments for Criterion D1
+### 3. Workflow for using MAPWAPS survey data in RLE assessments for Criterion D1
 
 [Workflow for MAPWAPS (Invasives_mapwap.qmd)](Invasives_mapwap.qmd)
 
@@ -88,3 +88,15 @@ This workflow uses new data on invasive alien plant species distribution and abu
 **Spatial Analysis**
 
 The land cover and vegetation were resampled to match the extent, origin and resolution of the IAP data., and then all the rasters were cross tabulated (crosstab) in R terra and then converted to a [table](output/inv_wc_lc_veg_tb.csv). This table was then summarised to produce the per vegetation type metrics of severity and extent of biotic disruption (by IAT) that are required by the RLE Criterion D assessments ([summary of MAPWAPS invasive cover per vegetation type](outputs/data_for_rle_mapwaps.csv)).
+
+### 4. Workflow for combining all invasive alien plant data for use in Ecosystem Protection Level and Red List of Threatened SPecies assessments. 
+
+[Workflow for combining all IAP data (Invasives_combined.qmd)](Invasives_combined.qmd)
+
+This workflow combines invasive alien plant data from the data sources described in section 1-3 into single raster coverage. This will be used as an additional input layer in updated Red List of Threatened Plant and Amphibian assessments, and terrestrial Ecosystem Protection Level Assessments for the National Biodiversity Assessment 2025. The data were prepossessed in ARCGIS PRO and recoded such that all pixels for which invasives were detected were assigned value of 8, all other pixels were assigned value of 1.
+
+#### Analysis and outputs: 
+
+The three invasives rasters were combined such that any pixel of value = 8 (invaded) was retained and all other pixels were assigned value = 0 (not invaded) to produce a **inv_comb.tif** raster. This data does not take into account the existing land cover, and invasions within secondary natural areas and urban area are retained.
+
+This combined invasion raster was combined with the 7 class national land cover such that if land cover was = 1 (natural) and the combined invasion layer = 8 (invaded) then the output pixel value was = 8. If not then the land cover value was assigned. This results in a 8 class national land cover : 1 = natural, 2 = secondary natural(old fields), 3 = artificial water bodies, 4 = buyilt up (infrastructure), 5 = croplands and orchards, 6 = mines and mine dumps, 7 = plantation forestry, 8 = invasive alien plant (high density). The output is a raster **lc2022_inv.tif**

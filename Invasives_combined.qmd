@@ -1,5 +1,5 @@
 ---
-title: "Combined invasive alien plant layer for the NBA 2025"
+title: "Combined invasive alien plant layers for the NBA 2025"
 bibliography: references.bib
 lang: en-GB
 ---
@@ -20,9 +20,9 @@ This workflow combines invasive alien plant data from various sources into a sin
 
 #### Analysis and outputs: 
 
-The three invasives rasters were combined such that any pixel of value = 8 (invaded) was retained and all othe rpixels were assigned value =0 (not invaded) to produce a inv_comb.tif raster.
+The three invasives rasters were combined such that any pixel of value = 8 (invaded) was retained and all other pixels were assigned value = 0 (not invaded) to produce a **inv_comb.tif** raster. This data does not take into account the existing land cover, and invasions with in secondary natural areas and urban area are retained.
 
-This combined invasion raster was combined with the 7 class national land cover such that if land cover was = 1 (natural) and the combined invasion layer = 8 (invaded) then the output pixel value was = 8. If not then the land cover value was assigned. This results in a 8 class national land cover : 1 = natural, 2 = secondary natural(old fields), 3 = artificial water bodies, 4 = buyilt up (infrastructure), 5 = croplands and orchards, 6 = mines and mine dumps, 7 = plantation forestry, 8 = invasive alien plant (high density). Ths produced a lc2022_inv.tif raster.
+This combined invasion raster was combined with the 7 class national land cover such that if land cover was = 1 (natural) and the combined invasion layer = 8 (invaded) then the output pixel value was = 8. If not then the land cover value was assigned. This results in a 8 class national land cover : 1 = natural, 2 = secondary natural(old fields), 3 = artificial water bodies, 4 = buyilt up (infrastructure), 5 = croplands and orchards, 6 = mines and mine dumps, 7 = plantation forestry, 8 = invasive alien plant (high density). The output is a raster **lc2022_inv.tif**
 
 ```{r}
 #load packages  
@@ -61,6 +61,5 @@ lc <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2022_7class.tif")
 lc2022_inv <-  ifel(inv_comb2 == 8 & lc == 1, 8, lc)
 
 writeRaster(lc2022_inv, "C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/lc2022_inv.tif", datatype = "INT1U", gdal = c("COMPRESS=LZW"), overwrite = TRUE)
-
 
 ```
