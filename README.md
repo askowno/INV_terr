@@ -18,6 +18,10 @@ b)  Western Cape Invasive Alien Tree survey ([Rebelo et al. 2024](https://doi.or
 
 c)  MAPWAPS invasive alien plant surveys for four catchments: Mzimvubu ([Skosana et al., 2024](https://doi.org/10.25413/SUN.25050401)), Tugela ([Cogill et al., 2024](https://doi.org/10.25413/SUN.25066151)) , Sabie-Crocodile ([Skosana et al., 2024](https://doi.org/10.25413/SUN.25050368)) and Luvuvhu ([Cogill et al., 2024](https://doi.org/10.25413/SUN.25050314)).
 
+d)  uMngeni catchment invasive alien plant density map associated with the Ecological Infrastructure for Water Security (EI4WS) Project. The data set was developed by the Institute of Natural Resources and GeoNest (Pty) Ltd. in a collaboration between uMngeni-uThukela Water and the South African National Biodiversity Institute (SANBI) (Institute of Natural Resources 2024).
+
+e)  Invasive Alien Plant species density layer for Berg-Breede demonstration catchment - part of the Ecological Infrastructure for Water Security (EI4WS) Project (Quale et al. 2024).
+
 ``` mermaid
 flowchart LR; 
 A[Land cover change data ARCGIS] --> B[INV_terr/Invasives_niaps.qmd] --> C(INV_terr/outputs/data_for_rle_niaps.csv) --> D[RLE D1 & D3 results]; 
@@ -92,14 +96,45 @@ This workflow uses new data on invasive alien plant species distribution and abu
 
 The land cover and vegetation were resampled to match the extent, origin and resolution of the IAP data., and then all the rasters were cross tabulated (crosstab) in R terra and then converted to a [table](output/inv_wc_lc_veg_tb.csv). This table was then summarised to produce the per vegetation type metrics of severity and extent of biotic disruption (by IAT) that are required by the RLE Criterion D assessments ([summary of MAPWAPS invasive cover per vegetation type](outputs/data_for_rle_mapwaps.csv)).
 
-### 4. Workflow for combining all invasive alien plant data for use in Ecosystem Protection Level and Red List of Threatened Species assessments.
+### 4. Workflow for using uMngeni and Berg-Breede AIP survey data in RLE assessments for Criterion D1
+
+[Workflow for EI4WS (Invasives_umngeni_bergbreede.qmd)](INV_terr/Invasives_umngeni_bergbreede.qmd)
+
+This workflow incorporates data from the EI\$WS project covering the uMngeni and Berg-Breede. The uMngeni data set was developed by the Institute of Natural Resources and GeoNest (Pty) Ltd. in a collaboration between uMngeni-uThukela Water and the South African National Biodiversity Institute (SANBI) (Institute of Natural Resources 2024). The AIP density layer for Berg-Breede demonstration catchment was prepared by GeoNest and SANBI (Quayle et al. 2024).
+
+**Data sources & import:**
+
+1.  South African National Land Cover data set for 2022 (prepared by the National Department of Forestry, Fisheries and the Environment) was modified by SANBI as described in Land Cover Change workflows. The data were reclassified in ARCGIS PRO into seven classes: 1 = Natural; 2 = Secondary Natural, 3 = Artificial water bodies, 4 = Built up, 5 = Croplands, 6 = Mines, 7 = Plantation (SANBI pers com).
+
+2.  National Vegetation Map 2024 version 012025 vector data (ESRI file geodatabase), curated by SANBI (Dayaram et al., 2019) was imported and then converted to a raster, snapped to the extent of the land cover.
+
+3.  uMngeni catchment invasive alien plant density map associated with the Ecological Infrastructure for Water Security (EI4WS) Project. The data set was developed by the Institute of Natural Resources and GeoNest (Pty) Ltd. in a collaboration between uMngeni-uThukela Water and the South African National Biodiversity Institute (SANBI) (Institute of Natural Resources 2024).
+
+4.  Invasive Alien Plant species density layer for Berg-Breede demonstration catchment - part of the Ecological Infrastructure for Water Security (EI4WS) Project (Quale et al. 2024).
+
+The land cover and vegetation were resampled to match the extent, origin and resolution of the IAP data., and then all the rasters were cross tabulated (crosstab) in R terra and then converted to a [table](output/inv_wc_lc_veg_tb.csv). This table was then summarised to produce the per vegetation type metrics of severity and extent of biotic disruption (by IAT) that are required by the RLE Criterion D assessments (results)
+
+### 5. Workflow for combining all invasive alien plant data for use in Ecosystem Protection Level and Red List of Threatened Species assessments.
 
 [Workflow for combining all IAP data (Invasives_combined.qmd)](Invasives_combined.qmd)
 
-This workflow combines invasive alien plant data from the data sources described in section 1-3 into single raster coverage. This will be used as an additional input layer in updated Red List of Threatened Plant and Amphibian assessments, and terrestrial Ecosystem Protection Level Assessments for the National Biodiversity Assessment 2025. The data were prepossessed in ARCGIS PRO and recoded such that all pixels for which invasives were detected were assigned value of 8, all other pixels were assigned value of 1.
+This workflow combines invasive alien plant data from various sources into a single raster coverage. This will be used as an additional input layer in updated Red List of Threatened Plant and Amphibian assessments, terrestrial Red List of Ecosystems and terrestrial Ecosystem Protection Level Assessments for the National Biodiversity Assessment 2025.
 
 #### Analysis and outputs:
 
-The four invasives rasters were combined such that any pixel of value = 8 (invaded) was retained and all other pixels were assigned value = 0 (not invaded) to produce a **inv_comb.tif** raster. This data does not take into account the existing land cover, and invasions within secondary natural areas and urban area are retained.
+The four IAP rasters were combined in two ways:
 
-This combined invasion raster was combined with the 7 class national land cover such that if land cover was = 1 (natural) and the combined invasion layer = 8 (invaded) then the output pixel value was = 8. If not then the land cover value was assigned. This results in a 8 class national land cover : 1 = natural, 2 = secondary natural(old fields), 3 = artificial water bodies, 4 = buyilt up (infrastructure), 5 = croplands and orchards, 6 = mines and mine dumps, 7 = plantation forestry, 8 = invasive alien plant (high density). The output is a raster **lc2022_inv.tif**
+1.  A maximum approach: Any pixel of value = 8 (invaded) was retained and all other pixels were assigned value = 0 (not invaded) to produce a **inv_comb_max.tif** raster. This data does not take into account the existing land cover, and invasions with in secondary natural areas and urban area are retained.
+2.  A strict approach: Where pixels from overlapping layers did not agree on presence of IAP (particularly in the Western Cape where three datasets are available) then the pixel is not assigned the value = 8. This produced the **inv_comb_strict.tif** raster. This approach results in fewer pixels being identified as invaded when compared tot he maximum approach. As such it can be considered to have higher confidence. This data does not take into account the existing land cover, and invasions with in secondary natural areas and urban area are retained.
+
+These combined invasion rasters were combined with the 7 class national land cover 2022 such that if land cover Value = 1 (natural) and the combined invasion layer Value = 8 (invaded) then the output pixel value is = 8. If not then the land cover value was assigned. This results in a 8 class national land cover : 1 = natural, 2 = secondary natural(old fields), 3 = artificial water bodies, 4 = built up (infrastructure), 5 = croplands and orchards, 6 = mines and mine dumps, 7 = plantation forestry, 8 = invasive alien plant (high density).
+
+Using the "Max" approach the output is a raster **lc2022_inv_max.tif,** and using the "Strict" approach the output raster is a raster **lc2022_inv_strict.tif**
+
+These two land cover data sets were individually cross tabulated with the national vegetation map to allow the percentage invasion per type to be calculated. From this the RLE criteria were then applied.
+
+#### Results:
+
+The results of the maximum combination: [INV_terr/outputs/data_for_rle_inv_max.csv](INV_terr/outputs/data_for_rle_inv_max.csv)
+
+The results of the strict combination: [INV_terr/outputs/data_for_rle_inv_strict.csv](INV_terr/outputs/data_for_rle_inv_strict.csv)

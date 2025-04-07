@@ -35,7 +35,7 @@ Using the "Max" approach the output is a raster **lc2022_inv_max.tif,** and usin
 
 These two land cover data sets were individually cross tabulated with the national vegetation map to allow the percentage invasion per type to be calculated. From this the RLE criteria were then applied.
 
-#### Results: 
+#### Results:
 
 The results of the maximum combination: [INV_terr/outputs/data_for_rle_inv_max.csv](INV_terr/outputs/data_for_rle_inv_max.csv)
 
