@@ -20,7 +20,7 @@ c)  MAPWAPS invasive alien plant surveys for four catchments: Mzimvubu ([Skosana
 
 d)  uMngeni catchment invasive alien plant density map associated with the Ecological Infrastructure for Water Security (EI4WS) Project. The data set was developed by the Institute of Natural Resources and GeoNest (Pty) Ltd. in a collaboration between uMngeni-uThukela Water and the South African National Biodiversity Institute (SANBI) (Institute of Natural Resources 2024).
 
-e)  Invasive Alien Plant species density layer for Berg-Breede demonstration catchment - part of the Ecological Infrastructure for Water Security (EI4WS) Project (Quale et al. 2024).
+e)  Invasive Alien Plant species density layer for Berg-Breede demonstration catchment - part of the Ecological Infrastructure for Water Security (EI4WS) Project (Quayle et al. 2024).
 
 ``` mermaid
 flowchart LR; 
