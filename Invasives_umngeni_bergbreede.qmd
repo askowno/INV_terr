@@ -1,0 +1,145 @@
+---
+title: "RLE terrestial 2025 - D1 assessment using unMngeni and Berg Breede IAP data"
+bibliography: references.bib
+lang: en-GB
+---
+
+### Overview of analysis:
+
+Exploring invasive alien plant data for the Berg-Breede Catchments produced by SANBI (Quayle et al., 2021) for use in terrestrial Red List of Ecosystems - a component of the National Biodiversity Assessment 2025.
+
+The extent and severity of invasive alien plant invasions can be used as a confirmation of "ongoing decline" in IUCN RLE 1.1 Criteria B1 and B2 assessments (restricted distribution), and in Criterion D assessment of functional declines (biotic disruption). Criterion D1 was applied (disruption in the last 50 years). The approach followed was to cross tabulate South Africa's national vegetation map (version 2024) (SANBI, 2025) and the modified national land cover 2022 (SANBI, 2024) and alien plant species occurrence data from the xxxxxxxxxxxxxxxxx.
+
+The severity of biotic disruption in pixels identified as invaded is estimated to be \>80%. Non natural areas (croplands, old fields, built up areas , mines, dams and plantations) were masked out of the analysis, and only natural remaining vegetation patches were assessed as to their extent of invasion within the area of interest.
+
+```{r}
+
+#load packages  
+library(terra) 
+library(tidyverse)
+library(sf)
+library(PROJ)
+```
+
+### Data sources & import:
+
+1.  South African National Land Cover data set for 2022 (prepared by the National Department of Forestry, Fisheries and the Environment) were adjusted to have a common raster resolution (20m). The data were reclassified in ARCGIS PRO into seven classes: 1 = Natural; 2 = Secondary Natural, 3 = Artificial water bodies, 4 = Built up, 5 = Croplands, 6 = Mines, 7 = Plantation (SANBI pers com).
+
+2.  National Vegetation Map 2024 version, vector data (ESRI file geodatabase) January 2025 curated by SANBI ([@Dayaram2019])
+
+3.  Map of key invasive alien plant taxa within uMngeni and Berg Breede catchment areas collected as part of the xxxxxxxxxxxxxx. The data were pre processed in ARCGIS PRO. Areas with 50% IAP cover or greater reclassifed to the Value = 8, areas with less than 50% IAP cover were reclassified to the Value = 0, areas outside the study catchments were reclassifed to Value = 99. The data were resampled and reprojected to match the national land cover 2022. This map was combine using a CON statement in ARCGIS with the uMngeni data which was preprocessed in the following way. The data were in vector format and the density (in percentage cover) per planning unit (a polygon built using a segmentation algorithm) were split across multiple fields. An overall IAP density per pologon was calculated
+
+```{r}
+#add invasive data : 
+umbb <- rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/BergBreede_uMngeni/umngeni_breede.tif")
+
+#Add land cover data  (note all LC products use  WGS84 Albers Equal Area, central meridian = 25; std parallel1 = -24; std parallel2 = -33). Use Tif version as this is processed faster by R terra.
+lc2022 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2022_7class.tif")
+#lc2022 <- resample(lc2022, inv_raw, method = "near")
+
+# add vegetation data
+veg <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_Change.gdb", "NVM2024Final_IEM5_12_07012025")  #ensure it uses proj =  wgs84 aea cm 25 -24 -33
+
+# to help differentiate masked areas (LES and SWA) from NON TERRESTRIAL areas add "NOTVEG" to T_MAPCODE where T_NAME = "Non-Terrestrial*"
+veg$T_MAPCODE <- ifelse(veg$T_Name == "Non-terrestrial (estuarine habitat)" | veg$T_Name == "Non-terrestrial (Aquatic)", "NOTVEG", veg$T_MAPCODE) 
+vegrast <- rasterize(veg,lc2022,"T_MAPCODE")
+
+# ensure extents match 
+umbb <- resample(umbb, lc2022, method = "near")
+
+# load EOO and AOO for Criterion B assessment (ongoing decline)
+eoo <- read_csv("C:/Rdata/RLE_terr/outputs/EOO_AOO_from_redlistr.csv")
+```
+
+### Spatial Analysis
+
+Cross tabulate the land cover, vegetation and invasive data to produce a value matrix - then convert this to a tibble (tidy table). Add extent (km2) based on pixel counts (pixels are 20mx20m). Add vegetation information (Biome, Name and full extent) to the table.
+
+```{r}
+#Crosstabulate invasives, land cover and vegegation data 
+#Convert raw output values to a tibble
+umbb_values <- crosstab(c(lc2022,vegrast,umbb), useNA=TRUE) #ensure NA areas included
+umbb_values <- as_tibble(umbb_values) #save raw crosstab outputs
+write.csv(umbb_values, file = "outputs/umbb_values.csv") 
+
+#--------------------------------------------------------------------
+#--------------------------------------------------------------------
+# Start here: load values to avoid rerunning time consuming cross tab above
+
+umbb_values <- read_csv("outputs/umbb_values.csv", show_col_types = FALSE)
+
+#Rename columns and add km2 (cell size is 10x10m), and make adjustments to values as required
+umbb_tb <- umbb_values %>%
+  mutate(km2 = (n*400)/1000000) %>% # add extent 10x10m pixels
+  mutate(umbb = ifelse(Band_1 == "NaN", 0, Band_1)) %>% # make NaN = 0 (allows as.integer later)
+  rename(LC = nlc2022_7class) %>%
+  filter(n != 0, T_MAPCODE != "NOTVEG", !is.na(LC)) %>%
+  mutate(LC = as.integer(LC), umbb = as.integer(umbb)) %>% #IMPORTANT to make integers othewise ifelse does not work correctly below!
+  select(-Band_1)
+
+# # write output to csv for excel use
+write.csv(umbb_tb, file = "outputs/umbb_tb.csv") 
+
+```
+
+### Summary statistics
+
+The extent of invasive alien plants within each ecosystem type is then expressed as a proportion. This proportion together with an estimation of the Relative Severity of biotic disruption from the invasion allows for the application of Criterion D of the Red List of Ecosystems. The remote sensing approach used suggests that areas must have high density of alien plants to be classified as invaded, so it is reasonable to assume pixels coded as invaded have a high relative severity of disruption (\~80%). If the majority of the invasion is though to have occurred within the last 50 years then Criterion D1 should be applied.
+
+|                              |               |               |               |
+|------------------------------|---------------|---------------|---------------|
+| Criterion D1                 | \>=80% extent | \>=50% extent | \>=30% extent |
+| **\>=80% relative severity** | **CR**        | **EN**        | **VU**        |
+| \>=50% relative severity     | EN            | VU            |               |
+| \>=30% relative severity     | VU            |               |               |
+
+```{r}
+options(scipen = 999)
+# Calculate the the extent of IAT per vegetation unit, but only where : landcover is natural (LC = 1) and invasives have been recorded (IAT =1).
+
+veg_extent_in_sa <- umbb_tb %>% # extent of each type in sa
+  group_by(T_MAPCODE) %>%
+  summarise(sum_sa = sum(km2))
+
+vegrem_extent_in_sa <- umbb_tb %>% # remaining natural extent in sa
+  filter( LC == 1) %>% 
+  group_by(T_MAPCODE) %>%
+  summarise(sumrem_sa = sum(km2))
+  
+veg_extent_in_aoi <- umbb_tb %>% #full extent in aoi
+  filter(umbb < 99) %>%  
+  group_by(T_MAPCODE) %>%
+  summarise(sum_aoi = sum(km2))
+
+
+ 
+# identify invaded areas, then summarise and work out prop  invaded. 
+
+umbb_sum <- umbb_tb %>%
+  mutate(inv_deg = ifelse(umbb == 8 & LC ==1,1,0)) %>%  # count only invasion in natural veg
+       group_by(T_MAPCODE, inv_deg) %>%
+  summarise(sum_IAP = sum(km2)) %>%
+  filter(inv_deg  == 1) %>%
+  left_join(vegrem_extent_in_sa, by = "T_MAPCODE") %>%
+  left_join(veg_extent_in_aoi, by ="T_MAPCODE") %>%
+  left_join(veg_extent_in_sa, by = "T_MAPCODE") %>% # from niaps workflow
+  mutate(prop_in_aoi = sum_aoi/sum_sa) %>% # check how much of type is in AOI
+  mutate(prop_inv = sum_IAP/sumrem_sa) %>%
+  mutate(D1_umbb = case_when(prop_inv >= 0.8 ~ "CR",
+                   prop_inv >= 0.5 ~ "EN",
+                   prop_inv >= 0.3 ~ "VU",
+                  TRUE ~ "LC")) %>%
+  left_join(eoo, "T_MAPCODE") %>%
+  mutate(B1i_umbb = case_when(EOO <= 2000 & prop_inv >= 0.3 ~ "CR", 
+                                  EOO <= 20000 & prop_inv >= 0.3 ~ "EN", 
+                                  EOO <= 50000 & prop_inv >= 0.3 ~ "VU", 
+                                  TRUE ~ "LC")) %>%
+  mutate(B2i_umbb = case_when(AOO <= 2 & prop_inv >= 0.3 ~ "CR", 
+                                  AOO <= 20 & prop_inv >= 0.3 ~ "EN", 
+                                  AOO <= 50 & prop_inv >= 0.3 ~ "VU", 
+                                  TRUE ~ "LC"))
+
+#  write output to csv to hand over to RLE assessment (in the next step the proportion of each ecosystem )
+write.csv(inv_veg_sum, file = "outputs/data_for_rle_mapwaps.csv") 
+
+```
