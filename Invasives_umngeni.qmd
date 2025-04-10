@@ -8,11 +8,7 @@ lang: en-GB
 
 Exploring invasive alien plant data for the uMngei Catchment for use in terrestrial Red List of Ecosystems - a component of the National Biodiversity Assessment 2025.
 
-The extent and severity of invasive alien plant invasions can be used as a confirmation of "ongoing decline" in IUCN RLE 1.1 Criteria B1 and B2 assessments (restricted distribution), and in Criterion D assessment of functional declines (biotic disruption). Criterion D1 was applied (disruption in the last 50 years). The approach followed was to cross tabulate South Africa's national vegetation map (version 2024) (SANBI, 2025) and data from the EI4WS project covering the uMngeni catchment area developed by the Institute of Natural Resources and GeoNest (Pty) Ltd. in a collaboration between uMngeni-uThukela Water and the South African National Biodiversity Institute (SANBI) (Institute of Natural Resources 2024).
-
-**Data sources & import:**
-
-The severity of biotic disruption in pixels identified as invaded is estimated to be \>80%. Non natural areas (croplands, old fields, built up areas , mines, dams and plantations) were masked out of the analysis, and only natural remaining vegetation patches were assessed as to their extent of invasion within the area of interest.
+The extent and severity of invasive alien plant invasions can be used as a confirmation of "ongoing decline" in IUCN RLE 1.1 Criteria B1 and B2 assessments (restricted distribution), and in Criterion D assessment of functional declines (biotic disruption). Criterion D1 was applied (disruption in the last 50 years). The approach followed was to cross tabulate South Africa's national vegetation map (version 2024) (SANBI, 2025) and data from the EI4WS project covering the uMngeni catchment area developed by the Institute of Natural Resources and GeoNest (Pty) Ltd. in a collaboration between uMngeni-uThukela Water and the South African National Biodiversity Institute (SANBI) (Institute of Natural Resources 2024). The severity of biotic disruption in pixels identified as invaded is estimated to be \>80%. Non natural areas (croplands, old fields, built up areas , mines, dams and plantations) were masked out of the analysis, and only natural remaining vegetation patches were assessed as to their extent of invasion within the area of interest.
 
 ```{r}
 
