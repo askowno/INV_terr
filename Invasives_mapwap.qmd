@@ -77,7 +77,7 @@ mapwap_tb <- mapwap_values %>%
   select(-mapwaps2)
 
 # # write output to csv for excel use
-write.csv(inv_lc_veg_tb, file = "outputs/mapwap_tb.csv") 
+write.csv(mapwap_tb, file = "outputs/mapwap_tb.csv") 
 
 ```
 
@@ -139,6 +139,6 @@ mapwap_sum <- mapwap_tb %>%
                                   TRUE ~ "LC"))
 
 #  write output to csv to hand over to RLE assessment (in the next step the proportion of each ecosystem )
-write.csv(inv_veg_sum, file = "outputs/data_for_rle_mapwaps.csv") 
+write.csv(mapwap_sum, file = "outputs/data_for_rle_mapwaps.csv") 
 
 ```

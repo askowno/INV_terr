@@ -20,8 +20,6 @@ c)  MAPWAPS invasive alien plant surveys for four catchments: Mzimvubu ([Skosana
 
 d)  uMngeni catchment invasive alien plant density map associated with the Ecological Infrastructure for Water Security (EI4WS) Project. The data set was developed by the Institute of Natural Resources and GeoNest (Pty) Ltd. in a collaboration between uMngeni-uThukela Water and the South African National Biodiversity Institute (SANBI) (Institute of Natural Resources 2024).
 
-e)  Invasive Alien Plant species density layer for Berg-Breede demonstration catchment - part of the Ecological Infrastructure for Water Security (EI4WS) Project (Quayle et al. 2024).
-
 ``` mermaid
 flowchart LR; 
 A[Land cover change data ARCGIS] --> B[INV_terr/Invasives_niaps.qmd] --> C(INV_terr/outputs/data_for_rle_niaps.csv) --> D[RLE D1 & D3 results]; 
@@ -35,7 +33,7 @@ F --> J;
 K[MAPWAPS IAP Survey] --> J[INV_terr/Invasives_mapwap.qmd] --> L(Inv_terr/outputs/data_for_rle_mapwaps.csv) --> D;
 A --> N; 
 F --> N;
-M[uMgeni & Berg-Breede IAP Survey] --> N[INV_terr/Invasives_umngeni_bergbreede.qmd] --> O(Inv_terr/outputs/data_for_rle_umbb.csv) --> D; 
+M[uMgeni IAP Survey] --> N[INV_terr/Invasives_umngeni.qmd] --> O(Inv_terr/outputs/data_for_rle_um.csv) --> D; 
 ```
 
 ------------------------------------------------------------------------
@@ -96,11 +94,11 @@ This workflow uses new data on invasive alien plant species distribution and abu
 
 The land cover and vegetation were resampled to match the extent, origin and resolution of the IAP data., and then all the rasters were cross tabulated (crosstab) in R terra and then converted to a [table](output/inv_wc_lc_veg_tb.csv). This table was then summarised to produce the per vegetation type metrics of severity and extent of biotic disruption (by IAT) that are required by the RLE Criterion D assessments ([summary of MAPWAPS invasive cover per vegetation type](outputs/data_for_rle_mapwaps.csv)).
 
-### 4. Workflow for using uMngeni and Berg-Breede AIP survey data in RLE assessments for Criterion D1
+### 4. Workflow for using uMngeni AIP survey data in RLE assessments for Criterion D1
 
-[Workflow for EI4WS (Invasives_umngeni_bergbreede.qmd)](INV_terr/Invasives_umngeni_bergbreede.qmd)
+[Workflow for EI4WS (Invasives_umngeni.qmd)](INV_terr/Invasives_umngeni_bergbreede.qmd)
 
-This workflow incorporates data from the EI\$WS project covering the uMngeni and Berg-Breede. The uMngeni data set was developed by the Institute of Natural Resources and GeoNest (Pty) Ltd. in a collaboration between uMngeni-uThukela Water and the South African National Biodiversity Institute (SANBI) (Institute of Natural Resources 2024). The AIP density layer for Berg-Breede demonstration catchment was prepared by GeoNest and SANBI (Quayle et al. 2024).
+This workflow incorporates data from the EI4WS project covering the uMngeni catchment area developed by the Institute of Natural Resources and GeoNest (Pty) Ltd. in a collaboration between uMngeni-uThukela Water and the South African National Biodiversity Institute (SANBI) (Institute of Natural Resources 2024).
 
 **Data sources & import:**
 
@@ -110,15 +108,13 @@ This workflow incorporates data from the EI\$WS project covering the uMngeni and
 
 3.  uMngeni catchment invasive alien plant density map associated with the Ecological Infrastructure for Water Security (EI4WS) Project. The data set was developed by the Institute of Natural Resources and GeoNest (Pty) Ltd. in a collaboration between uMngeni-uThukela Water and the South African National Biodiversity Institute (SANBI) (Institute of Natural Resources 2024).
 
-4.  Invasive Alien Plant species density layer for Berg-Breede demonstration catchment - part of the Ecological Infrastructure for Water Security (EI4WS) Project (Quale et al. 2024).
-
-The land cover and vegetation were resampled to match the extent, origin and resolution of the IAP data., and then all the rasters were cross tabulated (crosstab) in R terra and then converted to a [table](output/inv_wc_lc_veg_tb.csv). This table was then summarised to produce the per vegetation type metrics of severity and extent of biotic disruption (by IAT) that are required by the RLE Criterion D assessments (results)
+The land cover and vegetation were resampled to match the extent, origin and resolution of the IAP data, and then all the rasters were cross tabulated (crosstab) in R terra and then converted to a [table](output/inv_wc_lc_veg_tb.csv). This table was then summarised to produce the per vegetation type metrics of severity and extent of biotic disruption (by IAP) that are required by the RLE Criterion D assessments.
 
 ### 5. Workflow for combining all invasive alien plant data for use in Ecosystem Protection Level and Red List of Threatened Species assessments.
 
 [Workflow for combining all IAP data (Invasives_combined.qmd)](Invasives_combined.qmd)
 
-This workflow combines invasive alien plant data from various sources into a single raster coverage. This will be used as an additional input layer in updated Red List of Threatened Plant and Amphibian assessments, terrestrial Red List of Ecosystems and terrestrial Ecosystem Protection Level Assessments for the National Biodiversity Assessment 2025.
+This workflow combines invasive alien plant data from various sources into a single raster coverage. This will be used as an alternative input layer in updated Red List of Threatened Plant and Amphibian assessments, terrestrial Red List of Ecosystems and terrestrial Ecosystem Protection Level Assessments for the National Biodiversity Assessment 2025.
 
 #### Analysis and outputs:
 
