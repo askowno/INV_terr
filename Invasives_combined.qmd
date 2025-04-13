@@ -65,7 +65,8 @@ um <- rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/BergBreede_uMn
 
 # extra step required - resample as mapwaps and umbb didnt have same extent - dont know why as in ARCPRO they were snapped to the LC2022. 
 mapwaps <- resample(mapwaps, niaps, method = "near" )
-umbb <- resample(um, niaps, method = "near" )
+um <- resample(um, niaps, method = "near" )
+
 ```
 
 ```{r}

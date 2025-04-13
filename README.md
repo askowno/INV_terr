@@ -8,7 +8,7 @@ February 2025
 
 #### Summary
 
-Workflows for including invasive alien plant distribution and abundance data into ecosystem assessments for terrestrial ecosystems in South Africa. Part of the National Biodiversity Assessment 2025. Data sets on invasive alien density and distribution were cross-tabulated (using the R terra package) with national land cover and the national vegetation map data, resulting in tabular outputs that include the severity and extent of IAP per vegetation type. These outputs are then used in the Red List of Ecosystems assessment workflow in order to assess Criterion D3 (biotic disruption - functional decline) and to provide evidence of "ongoing decline" require in Criterion B assessments (limited distribution with ongoing decline). An additional workflow is included to produce a combined invasive alien plant layer that can be used in Ecosystem Protection Level assessments and as supplementary information for Red List of Threatened Species assessments.
+Workflows for including invasive alien plant distribution and abundance data into ecosystem assessments for terrestrial ecosystems in South Africa. Part of the National Biodiversity Assessment 2025. Data sets on invasive alien density and distribution were cross-tabulated (using the R terra package) with national land cover and the national vegetation map data, resulting in tabular outputs that include the severity and extent of IAP per vegetation type. These outputs are then used in the Red List of Ecosystems assessment workflow in order to assess Criterion D (biotic disruption - functional decline) and to provide evidence of "ongoing decline" require in Criterion B assessments (limited distribution with ongoing decline). An additional workflow is included to produce a combined invasive alien plant layer that can be used in Ecosystem Protection Level assessments and as supplementary information for Red List of Threatened Species assessments.
 
 Data included:
 
@@ -38,7 +38,7 @@ M[uMgeni IAP Survey] --> N[INV_terr/Invasives_umngeni.qmd] --> O(Inv_terr/output
 
 ------------------------------------------------------------------------
 
-### 1. Workflow for using NIAPS 2023 data in RLE assessments for Criterion D3
+### 1. Workflow for using NIAPS 2023 data in RLE assessments for Criterion B and D
 
 [Workflow for NIAPS (Invasives_niaps.qmd)](Invasives_niaps.qmd)
 
@@ -58,7 +58,7 @@ The National Invasive Alien Plant Survey (NIAPS) run by the Department of Forest
 
 The three rasters were cross tabulated (crosstab) in R terra and then converted to a [table](outputs/niaps_lc_veg_tb.csv) . This table was then summarised to produce the per vegetation type metrics of severity and extent of biotic disruption (by IAP) that are required by the RLE Criterion D assessments [(summary of NIAPS per vegetation type)](outputs/data_for_rle_niaps.csv)
 
-### 2. Workflow for using Cape Floristic Region IAT survey in RLE assessments for Criterion D3
+### 2. Workflow for using Cape Floristic Region IAT survey in RLE assessments for Criterion B and D
 
 [Workflow for CFR IAT (Invasives_rebelo_wc.qmd)](Invasives_rebelo_wc.qmd)
 
@@ -76,7 +76,7 @@ This workflow uses new data on invasive alien tree species distribution and abun
 
 The land cover and vegetation were resmapled to match the extent, origin and resolution of the IAT data., and then all the rasters were cross tabulated (crosstab) in R terra and then converted to a [table](output/inv_wc_lc_veg_tb.csv). This table was then summarised to produce the per vegetation type metrics of severity and extent of biotic distruption (by IAT) that are required by the RLE Criterion D assessments ([summary of CFR IAT cover per vegetation type](outputs/data_for_rle_rebelo_invwc.csv)).
 
-### 3. Workflow for using MAPWAPS survey data in RLE assessments for Criterion D1
+### 3. Workflow for using MAPWAPS survey data in RLE assessments for Criterion B and D
 
 [Workflow for MAPWAPS (Invasives_mapwap.qmd)](Invasives_mapwap.qmd)
 
@@ -94,7 +94,7 @@ This workflow uses new data on invasive alien plant species distribution and abu
 
 The land cover and vegetation were resampled to match the extent, origin and resolution of the IAP data., and then all the rasters were cross tabulated (crosstab) in R terra and then converted to a [table](output/inv_wc_lc_veg_tb.csv). This table was then summarised to produce the per vegetation type metrics of severity and extent of biotic disruption (by IAT) that are required by the RLE Criterion D assessments ([summary of MAPWAPS invasive cover per vegetation type](outputs/data_for_rle_mapwaps.csv)).
 
-### 4. Workflow for using uMngeni AIP survey data in RLE assessments for Criterion D1
+### 4. Workflow for using uMngeni AIP survey data in RLE assessments for Criterion D3
 
 [Workflow for EI4WS (Invasives_umngeni.qmd)](INV_terr/Invasives_umngeni_bergbreede.qmd)
 

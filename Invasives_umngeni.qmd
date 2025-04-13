@@ -56,7 +56,7 @@ Cross tabulate the land cover, vegetation and invasive data to produce a value m
 ```{r}
 #Crosstabulate invasives, land cover and vegegation data 
 #Convert raw output values to a tibble
-um_values <- crosstab(c(lc2022,vegrast,um), useNA=TRUE) #ensure NA areas included
+um_values <- crosstab(c(lc,vegrast,um), useNA=TRUE) #ensure NA areas included
 um_values <- as_tibble(um_values) #save raw crosstab outputs
 write.csv(um_values, file = "outputs/um_values.csv") 
 
