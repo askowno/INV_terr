@@ -153,18 +153,23 @@ write.csv(rall_inv_comb_strict, file = "outputs/rall_inv_strict2.csv")
 
 ```{r}
 # Clean up and summarise tables
+# import data to avoid spatial steps
+options(scipen =999)
+rall_inv_comb_max <- read_csv("outputs/rall_inv_max2.csv", show_col_types = FALSE)
+rall_inv_comb_strict <- read_csv("outputs/rall_inv_strict2.csv", show_col_types = FALSE)
+
 inv_max_tb <- rall_inv_comb_max %>%
   mutate(km2 = (n*400)/1000000) %>% # add extent 10x10m pixels
   rename(LC = nlc2022_7class) %>%
   filter(n != 0, T_MAPCODE != "NOTVEG", !is.na(LC), !is.na(LC), LC != "NaN") %>%
-  select(-n) %>%
+  select(-n,-...1) %>%  #the ...1 col is artifact of importation from csv
   mutate(LC = as.integer(LC)) #IMPORTANT to make integers othewise ifelse does not work correctly below!
 
 inv_strict_tb <- rall_inv_comb_strict %>%
   mutate(km2 = (n*400)/1000000) %>% # add extent 10x10m pixels
   rename(LC = nlc2022_7class) %>%
   filter(n != 0, T_MAPCODE != "NOTVEG", !is.na(LC), !is.na(LC), LC != "NaN") %>%
-  select(-n) %>%
+  select(-n,-...1) %>% #the ...1 col is artifact of importation from csv
   mutate(LC = as.integer(LC)) #IMPORTANT to make integers othewise ifelse does not work correctly below!
 
 inv_max_sum <- inv_max_tb %>%
@@ -175,23 +180,23 @@ inv_max_sum <- inv_max_tb %>%
   relocate(lc_7, .before =lc_8) %>%
   mutate(ext_tot = rowSums(select(., lc_1:lc_8), na.rm = TRUE)) %>%
   mutate(ext_rem = lc_1 + lc_8) %>%
-  mutate(prp_inv = lc_8/ext_rem) %>%
+  mutate(prc_inv = 100*round(lc_8/ext_rem,2)) %>%
    left_join(eoo, "T_MAPCODE") %>%
-  mutate(B1i_invmax = case_when(EOO <= 2000 & prp_inv >= 0.3 ~ "CR", 
-                                  EOO <= 20000 & prp_inv >= 0.3 ~ "EN", 
-                                  EOO <= 50000 & prp_inv >= 0.3 ~ "VU", 
+  mutate(B1i_inv = case_when(EOO <= 2000 & prc_inv >= 30 ~ "CR", 
+                                  EOO <= 20000 & prc_inv >= 30 ~ "EN", 
+                                  EOO <= 50000 & prc_inv >= 30 ~ "VU", 
                                   TRUE ~ "LC")) %>%
-  mutate(B2i_invmax = case_when(AOO <= 2 & prp_inv >= 0.3 ~ "CR", 
-                                  AOO <= 20 & prp_inv >= 0.3 ~ "EN", 
-                                  AOO <= 50 & prp_inv >= 0.3 ~ "VU", 
+  mutate(B2i_inv = case_when(AOO <= 2 & prc_inv >= 30 ~ "CR", 
+                                  AOO <= 20 & prc_inv >= 30 ~ "EN", 
+                                  AOO <= 50 & prc_inv >= 30 ~ "VU", 
                                   TRUE ~ "LC")) %>%
-  mutate(D1_invmax = case_when(prp_inv >= 0.8 ~ "CR",
-                   prp_inv >= 0.5 ~ "EN",
-                   prp_inv >= 0.3 ~ "VU",
+  mutate(D1_inv = case_when(prc_inv >= 80 ~ "CR",
+                   prc_inv >= 50 ~ "EN",
+                   prc_inv >= 30 ~ "VU",
                   TRUE ~ "LC")) %>%
-  mutate(D3_invmax = case_when(prp_inv >= 0.9 ~ "CR",
-                   prp_inv >= 0.7 ~ "EN",
-                   prp_inv >= 0.5 ~ "VU",
+  mutate(D3_inv = case_when(prc_inv >= 90 ~ "CR",
+                   prc_inv >= 70 ~ "EN",
+                   prc_inv >= 50 ~ "VU",
                   TRUE ~ "LC"))
   
 # Summarise STRICT invasives and assess Criterion B and D
@@ -203,23 +208,23 @@ inv_strict_sum <- inv_strict_tb %>%
   relocate(lc_7, .before =lc_8) %>%
   mutate(ext_tot = rowSums(select(., lc_1:lc_8), na.rm = TRUE)) %>%
   mutate(ext_rem = lc_1 + lc_8) %>%
-  mutate(prp_inv = lc_8/ext_rem) %>%
+  mutate(prc_inv = lc_8/ext_rem) %>%
    left_join(eoo, "T_MAPCODE") %>%
-  mutate(B1i_invstrict = case_when(EOO <= 2000 & prp_inv >= 0.3 ~ "CR", 
-                                  EOO <= 20000 & prp_inv >= 0.3 ~ "EN", 
-                                  EOO <= 50000 & prp_inv >= 0.3 ~ "VU", 
+  mutate(B1i_invstrict = case_when(EOO <= 2000 & prc_inv >= 30 ~ "CR", 
+                                  EOO <= 20000 & prc_inv >= 30 ~ "EN", 
+                                  EOO <= 50000 & prc_inv >= 30 ~ "VU", 
                                   TRUE ~ "LC")) %>%
-  mutate(B2i_invstrict = case_when(AOO <= 2 & prp_inv >= 0.3 ~ "CR", 
-                                  AOO <= 20 & prp_inv >= 0.3 ~ "EN", 
-                                  AOO <= 50 & prp_inv >= 0.3 ~ "VU", 
+  mutate(B2i_invstrict = case_when(AOO <= 2 & prc_inv >= 30 ~ "CR", 
+                                  AOO <= 20 & prc_inv >= 30 ~ "EN", 
+                                  AOO <= 50 & prc_inv >= 30 ~ "VU", 
                                   TRUE ~ "LC")) %>%
-  mutate(D1_invstrict = case_when(prp_inv >= 0.8 ~ "CR",
-                   prp_inv >= 0.5 ~ "EN",
-                   prp_inv >= 0.3 ~ "VU",
+  mutate(D1_invstrict = case_when(prc_inv >= 80 ~ "CR",
+                   prc_inv >= 50 ~ "EN",
+                   prc_inv >= 30 ~ "VU",
                   TRUE ~ "LC")) %>%
-  mutate(D3_invstrict = case_when(prp_inv >= 0.9 ~ "CR",
-                   prp_inv >= 0.7 ~ "EN",
-                   prp_inv >= 0.5 ~ "VU",
+  mutate(D3_invstrict = case_when(prc_inv >= 90 ~ "CR",
+                   prc_inv >= 70 ~ "EN",
+                   prc_inv >= 50 ~ "VU",
                   TRUE ~ "LC"))
 # Write results  
  write.csv(inv_max_sum, file = "outputs/data_for_rle_inv_max2.csv") 
