@@ -208,7 +208,7 @@ inv_strict_sum <- inv_strict_tb %>%
   relocate(lc_7, .before =lc_8) %>%
   mutate(ext_tot = rowSums(select(., lc_1:lc_8), na.rm = TRUE)) %>%
   mutate(ext_rem = lc_1 + lc_8) %>%
-  mutate(prc_inv = lc_8/ext_rem) %>%
+  mutate(prc_inv = 100*round(lc_8/ext_rem,2)) %>%
    left_join(eoo, "T_MAPCODE") %>%
   mutate(B1i_invstrict = case_when(EOO <= 2000 & prc_inv >= 30 ~ "CR", 
                                   EOO <= 20000 & prc_inv >= 30 ~ "EN", 
