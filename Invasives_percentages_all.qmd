@@ -1,0 +1,60 @@
+---
+title: "Invasives_percentages_all"
+format: html
+---
+
+Workflow to collate percentage invasion per Vegtype for each invasive species data set
+
+NIAPS, IAT_BioScape, MAPWAPs, Umgeni_Tugela
+
+```{r}
+library(tidyverse)
+options(scipen =999)
+
+niaps <- read.csv("outputs/data_for_rle_niaps.csv")   %>% 
+  select(T_MAPCODE, niaps_ext70, D3_niaps, B1i_niaps, B2i_niaps) %>%
+  rename(prpinv_niaps = niaps_ext70 )
+
+bioscape <- read.csv("outputs/data_for_rle_rebelo_invwc.csv") %>% 
+  select(T_MAPCODE, prop_inv, D3_cfr_iat, B1i_cfr_iat, B2i_cfr_iat)%>%
+  rename(prpinv_cfs_iat = prop_inv )
+
+umgeni <- read.csv("outputs/data_for_rle_um.csv")%>% 
+  select(T_MAPCODE, prop_inv, D1_um, B1i_um, B2i_um)%>%
+  rename(prpinv_umgeni = prop_inv )
+
+mapwaps <- read.csv("outputs/data_for_rle_mapwaps.csv")%>% 
+  select(T_MAPCODE, prop_inv, D1_mapwaps, B1i_mapwaps, B2i_mapwaps)%>%
+  rename(prpinv_mapwaps = prop_inv )
+
+```
+
+```{r}
+#combine invasive results and select max category and max perc invaded
+
+inv_comb <- niaps %>%
+  left_join(bioscape, by = "T_MAPCODE") %>%
+  left_join(mapwaps, by = "T_MAPCODE") %>%
+  left_join(umgeni, by = "T_MAPCODE") %>%
+  mutate(across(matches("^[DB]"), ~ recode(.x,
+                                           "CR" = 4L,
+                                           "EN" = 3L,
+                                           "VU" = 2L,
+                                           "LC" = 1L,
+                                           .default = 0L,
+                                           .missing = 0L))) %>%
+  rowwise() %>%
+  mutate(
+    prpinv_max = max(c_across(matches("^prpinv")), na.rm = TRUE),
+    D3_inv    = max(c_across(matches("^D")), na.rm = TRUE),
+    B1i_inv   = max(c_across(matches("^B1")), na.rm = TRUE),
+    B2i_inv   = max(c_across(matches("^B2")), na.rm = TRUE)
+  ) %>%
+  ungroup()
+
+
+  # write results
+write.csv(inv_comb, file = "outputs/data_for_rle_inv_comb.csv")              
+   
+
+```
