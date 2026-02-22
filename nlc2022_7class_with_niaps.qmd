@@ -104,7 +104,7 @@ niaps_aea_rc <- classify(niaps_aea, rcl = reclass_niaps)
 writeRaster(niaps_aea_rc, "C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/niaps_aea_rc.tif", datatype = "INT1U", gdal = c("COMPRESS=LZW"), overwrite = TRUE)
 
 
-# time consuming step can be skipped by loading from disc
+# timeconsuming step can be skipped by loading from disc
 #niaps_aea_rc <- as.numeric(rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/niaps_aea_rc.tif")) 
 ```
 
