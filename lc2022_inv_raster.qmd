@@ -6,7 +6,7 @@ lang: en-GB
 
 ### Overview of analysis:
 
-This workflow combines invasive alien plant data from various sources into a single raster coverage. This will be used as an additional input layer in updated Red List of Threatened Plant and Amphibian assessments, terrestrial Red List of Ecosystems and terrestrial Ecosystem Protection Level Assessments for the National Biodiversity Assessment 2025.
+This workflow combines invasive alien plant data from various sources into a single raster coverage. This is used as an additional input layer in updated Red List of Threatened Plant and Amphibian assessments, terrestrial Red List of Ecosystems and terrestrial Ecosystem Protection Level Assessments for the National Biodiversity Assessment 2025.
 
 #### Data sources:
 
@@ -26,47 +26,20 @@ This workflow combines invasive alien plant data from various sources into a sin
 
 The four IAP rasters were combined in two ways:
 
-1.  A maximum approach: Any pixel of value = 8 (invaded) was retained and all other pixels were assigned value = 0 (not invaded) to produce a **inv_comb_max.tif** raster. This data does not take into account the existing land cover, and invasions with in secondary natural areas and urban area are retained.
-2.  A strict approach: Where pixels from overlapping layers did not agree on presence of IAP (particularly in the Western Cape where three datasets are avilable) then the pixel is not assigned the value = 8. Thisproduced the **inv_comb_strict.tif** raster. This approach results in fewer pixels being identified as invaded when compared tot he maximum approach. As such it can be considered to have higher confidence. This data does not take into account the existing land cover, and invasions with in secondary natural areas and urban area are retained.
+1.  A maximum approach: Any pixel of value = 8 (invaded) was retained and all other pixels were assigned value = 0 (not invaded) to produce a **max** raster. This data does not take into account the existing land cover, and invasions with in secondary natural areas and urban area are retained.
+2.  A strict approach: Where pixels from overlapping layers did not agree on presence of IAP (particularly in the Western Cape where three data sets are available) then the pixel is not assigned the value = 8. This produced the **strict** raster. This approach results in fewer pixels being identified as invaded when compared tot he maximum approach. As such it can be considered to have higher confidence. This data does not take into account the existing land cover, and invasions with in secondary natural areas and urban area are retained.
 
-These combined invasion rasters were combined with the 7 class national land cover 2022 such that if land cover Value = 1 (natural) and the combined invasion layer Value = 8 (invaded) then the output pixel value is = 8. If not then the land cover value was assigned. This results in a 8 class national land cover : 1 = natural, 2 = secondary natural(old fields), 3 = artificial water bodies, 4 = built up (infrastructure), 5 = croplands and orchards, 6 = mines and mine dumps, 7 = plantation forestry, 8 = invasive alien plant (high density).
+These max and strict invasion rasters were combined with the 7 class national land cover 2022 such that if land cover Value = 1 (natural) and the combined invasion layer Value = 8 (invaded) then the output pixel value is = 8. If not then the land cover value was assigned. This results in a 8 class national land cover : 1 = natural, 2 = secondary natural(old fields), 3 = artificial water bodies, 4 = built up (infrastructure), 5 = croplands and orchards, 6 = mines and mine dumps, 7 = plantation forestry, 8 = invasive alien plant (high density).
 
 Using the "Max" approach the output is a raster **lc2022_inv_max.tif,** and using the "Strict" approach the output raster is a raster **lc2022_inv_strict.tif**
 
-These two land cover data sets were individually cross tabulated with the national vegetation map to allow the percentage invasion per type to be calculated. From this the RLE criteria were then applied.
-
-#### Results:
-
-The results of the maximum combination: [INV_terr/outputs/data_for_rle_inv_max.csv](INV_terr/outputs/data_for_rle_inv_max.csv)
-
-The results of the strict combination: [INV_terr/outputs/data_for_rle_inv_strict.csv](INV_terr/outputs/data_for_rle_inv_strict.csv)
-
 ```{r}
 #load packages  
-library(terra) 
-library(tidyverse)
-library(sf)
-library(PROJ)
+# NB RUN THIS AFTER RUNNING  the qmds = Invasives_niaps.qmd this loads packages required
 ```
 
 ```{r}
-# Data Prep
-#load niaps data - all species combined and using only pixels with > 50% condensed area (high canopy cover of iaps) 
-niaps <- rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/Kotze_National_2024/data/niaps2.tif") 
-
-#load Bioscape CFR data - all species combined and using only pixels with certainty > 50%
-inv_cfr <- rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/Rebelo Invasives WC/inv_cert2.tif")  
-
-#load MAPWAPS data - all species combined 
-mapwaps <- rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/MAPWAPS/mapwaps2.tif")  
-
-#load Umngeni Breede data - all species combined 
-um <- rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/BergBreede_uMngeni/um4.tif")  
-
-# extra step required - resample as mapwaps and umbb didnt have same extent - dont know why as in ARCPRO they were snapped to the LC2022. 
-mapwaps <- resample(mapwaps, niaps, method = "near" )
-um <- resample(um, niaps, method = "near" )
-
+# NB RUN THIS AFTER RUNNING all the qmds = Invasives_xxxx.qmd, as these load all the required data. 
 ```
 
 ```{r}
@@ -78,17 +51,17 @@ has_8 <- sum(niaps == 8, inv_cfr == 8, mapwaps == 8, um == 8) > 0
 # Apply the ifel() operation
 inv_comb_max <- ifel(has_8, 8, 0)
 
-# write to disk
-writeRaster(inv_comb_max, "C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/inv_comb_max2.tif", datatype = "INT1U", gdal = c("COMPRESS=LZW"), overwrite = TRUE)
-
-# load LC 2022
-lc <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2022_7class.tif")
-
 # combine the rasters such that if lc = 1  AND inv = 8 then value in new raster = 8, else use value of lc. This creates a 8 class land cover 1=nat, 2=secnat, 3=artwater, 4=built, 5=crop, 6=mine, 7=plant, 8=invaded
 
 lc2022_inv_max <-  ifel(inv_comb_max == 8 & lc == 1, 8, lc)
 
-writeRaster(lc2022_inv_max, "C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/lc2022_inv_max2.tif", datatype = "INT1U", gdal = c("COMPRESS=LZW"), overwrite = TRUE)
+# EXPORT TIF
+# Define subfolder
+out_dir <- file.path(data_path, "R_outputs")
+# Set output file path
+outfile <- file.path(out_dir, "lc2022_inv_max.tif")
+# Write a compressed Geo Tiff
+writeRaster(lc2022_inv_max, outfile, datatype = "INT1U", gdal = c("COMPRESS=LZW"), overwrite = TRUE)
 ```
 
 ```{r}
@@ -110,13 +83,16 @@ inv_comb_strict <- app(rasters, fun = function(v) {
 })
 
 
-writeRaster(inv_comb_strict, "C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/inv_comb_strict2.tif", datatype = "INT1U", gdal = c("COMPRESS=LZW"), overwrite = TRUE)
 
 # Strict 8 class LC: combine the rasters such that if lc = 1  AND inv = 8 then value in new raster = 8, else use value of lc. This creates a 8 class land cover 1=nat, 2=secnat, 3=artwater, 4=built, 5=crop, 6=mine, 7=plant, 8=invaded
 
 lc2022_inv_strict <-  ifel(inv_comb_strict == 8 & lc == 1, 8, lc)
 
-writeRaster(lc2022_inv_strict, "C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/lc2022_inv_strict2.tif", datatype = "INT1U", gdal = c("COMPRESS=LZW"), overwrite = TRUE)
+# EXPORT TIF
+# Set output file path
+outfile <- file.path(out_dir, "lc2022_inv_strict.tif")
+# Write a compressed Geo Tiff
+writeRaster(lc2022_inv_strict, outfile, datatype = "INT1U", gdal = c("COMPRESS=LZW"), overwrite = TRUE)
 
 ```
 

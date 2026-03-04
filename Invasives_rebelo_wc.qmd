@@ -1,10 +1,12 @@
 ---
-title: "RLE terrestial 2025 - D3 assessment using WC Invasive Alien Tree data"
 bibliography: references.bib
-lang: en-GB
 ---
 
-### Overview of analysis:
+### Workflow for using Bioscape CFR IAT survey data in RLE assessments for Criterion D3
+
+Date: 20250210
+
+Author: A.L. Skowno
 
 Exploring invasive woody plant data produced by [@rebelo] for use in terrestrial Red List of Ecosystems a component of the National Biodiversity Assessment 2025.
 
@@ -12,10 +14,7 @@ The extent and severity of invasive alien tree invasion can be used as a confirm
 
 ```{r}
 #load packages  
-library(terra) 
-library(tidyverse)
-library(sf)
-library(PROJ)
+# NB RUN THIS AFTER RUNNING  the qmds = Invasives_niaps.qmd this loads packages required
 ```
 
 ### Data sources & import:
@@ -27,14 +26,26 @@ library(PROJ)
 3.  Map of key woody invasive alien plant taxa within the Cape Floristic Region. This classification was generated using Sentinel-2 satellite imagery at a 10 m resolution using a Random Forest machine learning classifier. The data is unprocessed and contain certainty information in Band 2 (values of 0-100) ([@rebelo])
 
 ```{r}
-#add invasive data : supplied by Alanna Rebelo (for use in RLE only)
-inv_raw <- rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/Rebelo Invasives WC/BioScape_IAT_Map_Certainty.tif")  #ensure it uses proj =  wgs84 aea cm 25 -24 -33
+# NB RUN THIS AFTER RUNNING  the qmds = Invasives_niaps.qmd, as this sets up data_path and  loads Land cover and veg data required
+
+#add cfr invasive data path: 
+
+cfr_fp <- list.files(path = data_path, 
+                           pattern = "^BioScape_IAT_Map_Certainty\\.tif$",
+                           recursive = TRUE,
+                           full.names = TRUE)
+
+# Read in the file using terra package
+cfr <- rast(cfr_fp) 
+
+# ensure extents match lc
+cfr <- resample(cfr, lc2022, method = "near")
 
 # select band 1 save as  seperate layer with Values 1-6  for invasive taxa
-inv <- inv_raw[[1]]
+inv_cfr <- cfr[[1]]
 
 #reclassify  invasives data band 2 (certainty)  with values 0-100 into bins
-cert <- inv_raw[[2]]
+cert_cfr <- cfr[[2]]
 # Define reclassification bins
 # Each row represents: [min, max, new_value]
 reclass_matrix <- matrix(c(
@@ -52,21 +63,9 @@ reclass_matrix <- matrix(c(
 ), ncol = 3, byrow = TRUE)
 
 # Reclassify the band 2 using the matrix
-cert <- classify(cert, rcl = reclass_matrix)
+cert_cfr <- classify(cert_cfr, rcl = reclass_matrix)
 
-#Add land cover data  (note all LC products use  WGS84 Albers Equal Area, central meridian = 25; std parallel1 = -24; std parallel2 = -33). Use Tif version as this is processed faster by R terra.
-lc2022 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2022_7class.tif")
-lc2022 <- resample(lc2022, inv_raw, method = "near")
 
-# add vegetation data
-veg <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_Change.gdb", "NVM2024Final_IEM5_12_07012025")  #ensure it uses proj =  wgs84 aea cm 25 -24 -33
-
-# to help differentiate masked areas (LES and SWA) from NON TERRESTRIAL areas add "NOTVEG" to T_MAPCODE where T_NAME = "Non-Terrestrial*"
-veg$T_MAPCODE <- ifelse(veg$T_Name == "Non-terrestrial (estuarine habitat)" | veg$T_Name == "Non-terrestrial (Aquatic)", "NOTVEG", veg$T_MAPCODE) 
-vegrast <- rasterize(veg,inv,"T_MAPCODE")
-
-# load EOO and AOO for Criterion B assessment (ongoing decline)
-eoo <- read_csv("C:/Rdata/RLE_terr/outputs/EOO_AOO_from_redlistr.csv")
 ```
 
 ### Spatial Analysis
@@ -76,7 +75,7 @@ Cross tabulate the land cover, vegetation and invasive data to produce a value m
 ```{r}
 #Crosstabulate invasives, land cover and vegegation data 
 #Convert raw output values to a tibble
-inv_lc_veg <- crosstab(c(lc2022,vegrast,inv, cert), useNA=TRUE) #ensure NA areas included
+inv_lc_veg <- crosstab(c(lc2022,vegrast,inv_cfr, cert_cfr), useNA=TRUE) #ensure NA areas included
 inv_lc_veg_values <- as_tibble(inv_lc_veg) #save raw crosstab outputs
 write.csv(inv_lc_veg_values, file = "outputs/inv_wc_lc_veg_values.csv") 
 

@@ -3,9 +3,11 @@ title: "Invasives_percentages_all"
 format: html
 ---
 
-Workflow to collate percentage invasion per Vegtype for each invasive species data set
+### Overview
 
-NIAPS, IAT_BioScape, MAPWAPs, Umgeni_Tugela
+Workflow to collate percentage invasion and RLE assessment of Criterion D per Vegtype for each invasive species data set. This workflow produces a summary table that is taken up in the RLE compiled assessment.
+
+It draws on the primary outputs from workflows for NIAPS (INV_terr/Invasives_niaps.qmd), CFR IAT (Invasives_rebelo_wc.qmd), MAPWAPs (Invasives_mapwap.qmd), Umgeni_Tugela (Invasives_umngeni.qmd).
 
 ```{r}
 library(tidyverse)

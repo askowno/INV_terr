@@ -1,6 +1,16 @@
-# R session and workspace files
-.Rhistory
-.RData
+# R-related files
+*.Rproj
+*.Rproj.user/
+*.Rhistory
+*.RData
+*.Ruserdata
+.Renviron
+
+# Temporary files
+*.log
+*.tmp
+
+# System files
+.DS_Store       # macOS
+Thumbs.db       # Windows
 .Rproj.user
-.Ruserdata
-# RStudio project files

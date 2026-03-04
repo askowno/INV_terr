@@ -8,7 +8,9 @@ February 2025
 
 #### Summary
 
-Workflows for including invasive alien plant distribution and abundance data into ecosystem assessments for terrestrial ecosystems in South Africa. Part of the National Biodiversity Assessment 2025. Data sets on invasive alien density and distribution were cross-tabulated (using the R terra package) with national land cover and the national vegetation map data, resulting in tabular outputs that include the severity and extent of IAP per vegetation type. These outputs are then used in the Red List of Ecosystems assessment workflow in order to assess Criterion D (biotic disruption - functional decline) and to provide evidence of "ongoing decline" require in Criterion B assessments (limited distribution with ongoing decline). An additional workflow is included to produce a combined invasive alien plant layer that can be used in Ecosystem Protection Level assessments and as supplementary information for Red List of Threatened Species assessments.
+Workflows for including invasive alien plant distribution and abundance data into ecosystem assessments for terrestrial ecosystems in South Africa. Part of the National Biodiversity Assessment 2025. Data sets on invasive alien density and distribution were cross-tabulated (using the R terra package) with national land cover and the national vegetation map data, resulting in tabular outputs that include the severity and extent of IAP per vegetation type. These outputs are then used in the Red List of Ecosystems assessment workflow in order to assess Criterion D (biotic disruption - functional decline) and to provide evidence of "ongoing decline" require in Criterion B assessments (limited distribution with ongoing decline).
+
+Note: an additional workflow (lc2022_inv_raster.qmd) is included to produce a combined land cover and invasive alien plant raster (using these same inputs) that can be used in Ecosystem Protection Level assessments and as supplementary information for Red List of Threatened Species assessments.
 
 Data included:
 
@@ -22,7 +24,7 @@ d)  uMngeni catchment invasive alien plant density map associated with the Ecolo
 
 ``` mermaid
 flowchart LR; 
-A[Land cover change data ARCGIS] --> B[INV_terr/Invasives_niaps.qmd] --> C(INV_terr/outputs/data_for_rle_niaps.csv) --> D[RLE D1 & D3 results]; 
+A[Land cover change data ARCGIS] --> B[INV_terr/Invasives_niaps.qmd] --> C(INV_terr/outputs/data_for_rle_niaps.csv) --> D[INV_terr/Invasive_percentages_all.qmd] --> Q[INV_terr/outputs/data_for_rle_inv_comb.csv]; 
 E[National Invasive Alien Plant Survey] --> B; 
 F[Vegetation map ARCGIS] --> B; 
 G[CFR Invasive Alien Tree Survey] --> H[INV_terr/Invasives_rebelo_wc.qmd] --> I(INV_terr/outputs/data_for_rle_rebelo_invwc.csv) --> D; 
@@ -74,7 +76,7 @@ This workflow uses new data on invasive alien tree species distribution and abun
 
 **Spatial Analysis**
 
-The land cover and vegetation were resmapled to match the extent, origin and resolution of the IAT data., and then all the rasters were cross tabulated (crosstab) in R terra and then converted to a [table](output/inv_wc_lc_veg_tb.csv). This table was then summarised to produce the per vegetation type metrics of severity and extent of biotic distruption (by IAT) that are required by the RLE Criterion D assessments ([summary of CFR IAT cover per vegetation type](outputs/data_for_rle_rebelo_invwc.csv)).
+The land cover and vegetation were resampled to match the extent, origin and resolution of the IAT data., and then all the rasters were cross tabulated (crosstab) in R terra and then converted to a [table](output/inv_wc_lc_veg_tb.csv). This table was then summarised to produce the per vegetation type metrics of severity and extent of biotic disruption (by IAT) that are required by the RLE Criterion D assessments ([summary of CFR IAT cover per vegetation type](outputs/data_for_rle_rebelo_invwc.csv)).
 
 ### 3. Workflow for using MAPWAPS survey data in RLE assessments for Criterion B and D
 
@@ -110,9 +112,17 @@ This workflow incorporates data from the EI4WS project covering the uMngeni catc
 
 The land cover and vegetation were resampled to match the extent, origin and resolution of the IAP data, and then all the rasters were cross tabulated (crosstab) in R terra and then converted to a [table](output/inv_wc_lc_veg_tb.csv). This table was then summarised to produce the per vegetation type metrics of severity and extent of biotic disruption (by IAP) that are required by the RLE Criterion D assessments.
 
-### 5. Workflow for combining all invasive alien plant data for use in Ecosystem Protection Level and Red List of Threatened Species assessments.
+### 5. Workflow for combining all invasive alien plant assessment tables (steps 1-4 above) for use in RLE
 
-[Workflow for combining all IAP data (Invasives_combined.qmd)](Invasives_combined.qmd)
+[Workflow for combined invasive assessments (Invasive_percentages_all.qmd)](Invasive_percentages_all.qmd)
+
+Workflow to collate percentage invasion and RLE assessment of Criterion D per Vegtype for each invasive species data set. This workflow produces a summary table that is taken up in the RLE compiled assessment.
+
+It draws on the primary outputs from workflows for NIAPS (INV_terr/Invasives_niaps.qmd), CFR IAT (Invasives_rebelo_wc.qmd), MAPWAPs (Invasives_mapwap.qmd), Umgeni_Tugela (Invasives_umngeni.qmd).
+
+### 6. Workflow for a combined raster of invasive alien plant data plus land cover 2022, for use in Ecosystem Protection Level and Red List of Threatened Species assessments.
+
+[Workflow for a single raster of IAP data (lc2022_inv_raster.qmd)](lc2022_inv_raster.qmd)
 
 This workflow combines invasive alien plant data from various sources into a single raster coverage. This will be used as an alternative input layer in updated Red List of Threatened Plant and Amphibian assessments, terrestrial Red List of Ecosystems and terrestrial Ecosystem Protection Level Assessments for the National Biodiversity Assessment 2025.
 
@@ -124,13 +134,3 @@ The four IAP rasters were combined in two ways:
 2.  A strict approach: Where pixels from overlapping layers did not agree on presence of IAP (particularly in the Western Cape where three datasets are available) then the pixel is not assigned the value = 8. This produced the **inv_comb_strict.tif** raster. This approach results in fewer pixels being identified as invaded when compared tot he maximum approach. As such it can be considered to have higher confidence. This data does not take into account the existing land cover, and invasions with in secondary natural areas and urban area are retained.
 
 These combined invasion rasters were combined with the 7 class national land cover 2022 such that if land cover Value = 1 (natural) and the combined invasion layer Value = 8 (invaded) then the output pixel value is = 8. If not then the land cover value was assigned. This results in a 8 class national land cover : 1 = natural, 2 = secondary natural(old fields), 3 = artificial water bodies, 4 = built up (infrastructure), 5 = croplands and orchards, 6 = mines and mine dumps, 7 = plantation forestry, 8 = invasive alien plant (high density).
-
-Using the "Max" approach the output is a raster **lc2022_inv_max.tif,** and using the "Strict" approach the output raster is a raster **lc2022_inv_strict.tif**
-
-These two land cover data sets were individually cross tabulated with the national vegetation map to allow the percentage invasion per type to be calculated. From this the RLE criteria were then applied.
-
-#### Results:
-
-The results of the maximum combination: [INV_terr/outputs/data_for_rle_inv_max.csv](INV_terr/outputs/data_for_rle_inv_max.csv)
-
-The results of the strict combination: [INV_terr/outputs/data_for_rle_inv_strict.csv](INV_terr/outputs/data_for_rle_inv_strict.csv)

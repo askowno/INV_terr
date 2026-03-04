@@ -1,10 +1,12 @@
 ---
-title: "RLE terrestial 2025 - B and D1 assessment using unMngeni IAP data"
 bibliography: references.bib
-lang: en-GB
 ---
 
-### Overview of analysis:
+### Workflow for using uMngeni-uThukela IAP data in RLE assessments for Criterion D3
+
+Date: 20250210
+
+Author: A.L. Skowno
 
 Exploring invasive alien plant data for the uMngei Catchment for use in terrestrial Red List of Ecosystems - a component of the National Biodiversity Assessment 2025.
 
@@ -13,10 +15,7 @@ The extent and severity of invasive alien plant invasions can be used as a confi
 ```{r}
 
 #load packages  
-library(terra) 
-library(tidyverse)
-library(sf)
-library(PROJ)
+# NB RUN THIS AFTER RUNNING  the qmds = Invasives_niaps.qmd this loads packages required
 ```
 
 ### Data sources & import:
@@ -28,25 +27,21 @@ library(PROJ)
 3.  Map of key invasive alien plant taxa within uMngeni catchment areas collected as part of the EI4WS project (INR, 2024). The data were pre processed in ARCGIS PRO. The data were in vector format (.gdb) and the density (in percentage cover) of IAP per planning unit (a polygon built using a segmentation algorithm) were split across multiple fields; dominant, secondary, tertiary. In addition the density of invasives from Holden et al was included as a field in the dataset, also as a percentage cover. From these fields the polygons were classified as follows. All polygons for which the dominant IAP, secondary IAP tertiary IAP summed to over 50% were given the value = 8. All polygons for which the Holden data indicated \>50% IAP density were also given the value = 8. Other polygons were given value = 0. The vector data was converted to raster snapped to the 7 class national land cover at 20m and using Alber Equal Area projection and nodata was assigned value = 0. The assumption is that for all IAP data when density (condensed area or canopy cover) are over 50%, the severity of biotic disruption can be set to \>70%.
 
 ```{r}
-#add invasive data : 
-um <- rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/BergBreede_uMngeni/um4.tif")
+# NB RUN THIS AFTER RUNNING  the qmds = Invasives_niaps.qmd, as this sets up data_path and  loads Land cover and veg data required
 
-#Add land cover data  (note all LC products use  WGS84 Albers Equal Area, central meridian = 25; std parallel1 = -24; std parallel2 = -33). Use Tif version as this is processed faster by R terra.
-lc2022 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2022_7class.tif")
+# add umgeni  invasive data path: 
 
+um_fp <- list.files(path = data_path, 
+                           pattern = "^um4\\.tif$",
+                           recursive = TRUE,
+                           full.names = TRUE)
 
-# add vegetation data
-veg <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_Change.gdb", "NVM2024Final_IEM5_12_07012025")  #ensure it uses proj =  wgs84 aea cm 25 -24 -33
+# Read in the file using terra package
+um <- rast(um_fp) 
 
-# to help differentiate masked areas (LES and SWA) from NON TERRESTRIAL areas add "NOTVEG" to T_MAPCODE where T_NAME = "Non-Terrestrial*"
-veg$T_MAPCODE <- ifelse(veg$T_Name == "Non-terrestrial (estuarine habitat)" | veg$T_Name == "Non-terrestrial (Aquatic)", "NOTVEG", veg$T_MAPCODE) 
-vegrast <- rasterize(veg,lc2022,"T_MAPCODE")
-
-# ensure extents match 
+# ensure extents match lc
 um <- resample(um, lc2022, method = "near")
 
-# load EOO and AOO for Criterion B assessment (ongoing decline)
-eoo <- read_csv("C:/Rdata/RLE_terr/outputs/EOO_AOO_from_redlistr.csv")
 ```
 
 ### Spatial Analysis

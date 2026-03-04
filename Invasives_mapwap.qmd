@@ -1,12 +1,10 @@
 ---
-title: "RLE terrestial 2025 - D3 assessment using MAPWAPS Alien Tree data"
 bibliography: references.bib
-lang: en-GB
 ---
 
-### Overview of analysis:
+### Workflow for using MAPWAP IAP survey data in RLE assessments for Criterion D3
 
-Exploring invasive alein plant data produced by the MAPWAPS project ([@cogill; @cogilla; @skosana; @skosanaa]) for use in terrestrial Red List of Ecosystems - a component of the National Biodiversity Assessment 2025.
+Exploring invasive alien plant data produced by the MAPWAPS project ([@cogill; @cogilla; @skosana; @skosanaa]) for use in terrestrial Red List of Ecosystems - a component of the National Biodiversity Assessment 2025.
 
 The extent and severity of invasive alien plant invasions can be used as a confirmation of "ongoing decline" in IUCN RLE 1.1 Criteria B1 and B2 assessments (restricted distribution), and in Criterion D assessment of functional declines (biotic disruption). Criterion D1 was applied (disruption in the last 50 years). The approach followed was to cross tabulate South Africa's national vegetation map (version 2024) (SANBI, 2025) and the modified national land cover 2022 (SANBI, 2024) and alien plant species occurrence data from the MAPWAPS project ([@skosana], [@cogill], [@skosanaa] , [@cogilla] ) .
 
@@ -14,10 +12,7 @@ The severity of biotic disruption in pixels identified as invaded is estimated t
 
 ```{r}
 #load packages  
-library(terra) 
-library(tidyverse)
-library(sf)
-library(PROJ)
+# NB RUN THIS AFTER RUNNING  the qmds = Invasives_niaps.qmd this loads packages required
 ```
 
 ### Data sources & import:
@@ -29,25 +24,20 @@ library(PROJ)
 3.  Map of key invasive alien plant taxa within Mzimvubu, Tugela, Sabie-Crocodile and Luvuvhu catchment areas collected as part of the MAPWAPS program ([@skosana], [@cogill], [@skosanaa] , [@cogilla] ). This classification was generated using Sentinel-2 satellite imagery at a 10 m resolution using a Gradient Tree Boost (GTB) classification. The data were pre processed in ARCGIS PRO, where an attribute \[mapwaps\] was added to each data set. Where LUCL = Alien\* the value 8 was assigned, otherwise the value 0. This allows for determination of invaded areas and other areas within the area of interest. The shapefiles for Luvuhvu and and Sabie-Crocodile were projected from UTM36S to UTM35S, and then all four were merged into a single shapefile mapwaps.shp. this was then rasterized (using mapwaps attribute) and snapped to the national land cover grid 2022 (including re-projection from UTM to Albers Equal Area to match national land cover and vegetation data).
 
 ```{r}
-#add invasive data : supplied by Coghill and Skosana (for use in RLE only)
-mapwap <- rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/MAPWAPS/mapwaps2.tif")
+# NB RUN THIS AFTER RUNNING  the qmds = Invasives_niaps.qmd, as this sets up data_path and  loads Land cover and veg data required
 
-#Add land cover data  (note all LC products use  WGS84 Albers Equal Area, central meridian = 25; std parallel1 = -24; std parallel2 = -33). Use Tif version as this is processed faster by R terra.
-lc2022 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2022_7class.tif")
-#lc2022 <- resample(lc2022, inv_raw, method = "near")
+#add umgeni  invasive data path: 
 
-# add vegetation data
-veg <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_Change.gdb", "NVM2024Final_IEM5_12_07012025")  #ensure it uses proj =  wgs84 aea cm 25 -24 -33
+mapwap_fp <- list.files(path = data_path, 
+                           pattern = "^mapwaps2\\.tif$",
+                           recursive = TRUE,
+                           full.names = TRUE)
 
-# to help differentiate masked areas (LES and SWA) from NON TERRESTRIAL areas add "NOTVEG" to T_MAPCODE where T_NAME = "Non-Terrestrial*"
-veg$T_MAPCODE <- ifelse(veg$T_Name == "Non-terrestrial (estuarine habitat)" | veg$T_Name == "Non-terrestrial (Aquatic)", "NOTVEG", veg$T_MAPCODE) 
-vegrast <- rasterize(veg,lc2022,"T_MAPCODE")
+# Read in the file using terra package
+mapwap <- rast(mapwap_fp) 
 
-# ensure extents match 
+# ensure extents match lc
 mapwap <- resample(mapwap, lc2022, method = "near")
-
-# load EOO and AOO for Criterion B assessment (ongoing decline)
-eoo <- read_csv("C:/Rdata/RLE_terr/outputs/EOO_AOO_from_redlistr.csv")
 ```
 
 ### Spatial Analysis
@@ -67,9 +57,9 @@ write.csv(mapwap_values, file = "outputs/mapwap_values.csv")
 
 mapwap_values <- read_csv("outputs/mapwap_values.csv", show_col_types = FALSE)
 
-#Rename columns and add km2 (cell size is 10x10m), and make adjustments to values as required
+#Rename columns and add km2 (cell size is 20x20), and make adjustments to values as required
 mapwap_tb <- mapwap_values %>%
-  mutate(km2 = (n*400)/1000000) %>% # add extent 10x10m pixels
+  mutate(km2 = (n*400)/1000000) %>% # 
   mutate(mapwaps = ifelse(mapwaps2 == "NaN", 0, mapwaps2)) %>% # make NaN = 0 (allows as.integer later)
   rename(LC = nlc2022_7class) %>%
   filter(n != 0, T_MAPCODE != "NOTVEG", !is.na(LC)) %>%
