@@ -1,0 +1,162 @@
+---
+title: "Combined invasive alien plant rasters and land cover rasters (2022 and 2018) for the NBA 2025 terrestrial ecosystem assessments."
+bibliography: references.bib
+lang: en-GB
+---
+
+### Overview of analysis:
+
+This workflow combines invasive alien plant data from various sources into a single raster coverage. This is combined with land cover data for 2022 and 2018 and used as an additional input layer in updated Red List of Threatened Plant and Amphibian assessments, terrestrial Ecosystem Protection Level Assessments for the National Biodiversity Assessment 2025.
+
+#### Data sources:
+
+1.  Map of woody invasive alien plant taxa within the Cape Floristic Region (Invasives_rebelo.qmd)
+2.  Map of key invasive alien plant taxa within Mzimvubu, Tugela, Sabie-Crocodile and Luvuvhu catchment areas collected as part of the MAPWAPS program (Invasives_mapwaps.qmd)
+3.  National Invasive Alien Plant Survey (NIAPS) (Invasives_niaps.qmd)
+4.  uMngeni catchment invasive alien plant density map (Invasives_Umngeni.qmd)
+5.  National Land Cover 7 class 2022 and 2018 (SANBI per com)
+6.  National Vegetation Map 2024 version (SANBI per com)
+
+#### Analysis and outputs:
+
+The four IAP rasters were combined in two ways:
+
+1.  A maximum approach: Any pixel of value = 8 (invaded) was retained and all other pixels were assigned value = 0 (not invaded) to produce a **max** raster. This data does not take into account the existing land cover, and invasions with in secondary natural areas and urban area are retained.
+2.  A strict approach: Where pixels from overlapping layers did not agree on presence of IAP (particularly in the Western Cape where three data sets are available) then the pixel is not assigned the value = 8. This produced the **strict** raster. This approach results in fewer pixels being identified as invaded when compared tot he maximum approach. As such it can be considered to have higher confidence. This data does not take into account the existing land cover, and invasions with in secondary natural areas and urban area are retained.
+
+These max and strict invasion rasters were combined with the 7 class national land cover 2022 such that if land cover Value = 1 (natural) and the combined invasion layer Value = 8 (invaded) then the output pixel value is = 8. If not then the land cover value was assigned. This results in a 8 class national land cover : 1 = natural, 2 = secondary natural(old fields), 3 = artificial water bodies, 4 = built up (infrastructure), 5 = croplands and orchards, 6 = mines and mine dumps, 7 = plantation forestry, 8 = invasive alien plant (high density).
+
+Using the "Max" approach the output is a raster **lc2022_inv_max2.tif & lc2018_inv_max2.tif** and using the "Strict" approach the output raster is a raster **lc2022_inv_strict2.tif &** **lc2018_inv_strict2.tif**
+
+```{r}
+# NB RUN THIS AFTER RUNNING all the qmds = Invasives_xxxx.qmd, as these load all the required data. 
+# Additional data step required - Load 2018 land cover (not loaded by any other script)
+
+lc2018_fp <- list.files(path = data_path, 
+                           pattern = "^nlc2018_7class\\.tif$",
+                           recursive = TRUE,
+                           full.names = TRUE)
+
+# Read in the file using terra package
+lc2018 <- rast(lc2018_fp)  
+```
+
+```{r}
+# COMBO 1 (MAX) Combine all IAP layers such that for overlappng layers agreement on presense of IAP is not required - all pixels that are labeled as IAP are kept. This results in a "maximum"  IAP map with lower confidence than a strict approach that requires overlapping pixels to all show presense of IAPs(the "strict" approach is applied in seperate script) 
+
+# Create a single-layer mask where any raster has value = 8
+has_8 <- sum(niaps == 8, inv_cfr == 8, mapwap == 8, um == 8) > 0  
+
+# Apply the ifel() operation
+inv_comb_max <- ifel(has_8, 8, 0)
+
+# combine the rasters such that if lc = 1  AND inv = 8 then value in new raster = 8, else use value of lc. This creates a 8 class land cover 1=nat, 2=secnat, 3=artwater, 4=built, 5=crop, 6=mine, 7=plant, 8=invaded
+
+lc2022_inv_max <-  ifel(inv_comb_max == 8 & lc2022 == 1, 8, lc)
+lc2018_inv_max <-  ifel(inv_comb_max == 8 & lc2018 == 1, 8, lc)
+
+# EXPORT TIF
+# Define sub folder
+out_dir <- file.path(data_path, "R_outputs")
+# Set output file path
+out22 <- file.path(out_dir, "lc2022_inv_max.tif")
+out18 <- file.path(out_dir, "lc2018_inv_max.tif")
+# Write a compressed Geo Tiff
+writeRaster(lc2022_inv_max, out22, datatype = "INT1U", gdal = c("COMPRESS=LZW"), overwrite = TRUE)
+writeRaster(lc2018_inv_max, out18, datatype = "INT1U", gdal = c("COMPRESS=LZW"), overwrite = TRUE)
+```
+
+```{r}
+# COMBO 2 (Strict0 -  Alternative "conservative" version of the IAP combination layer - where overlapping layers (eg Berg-Breede, CFR and NIAPS must agree on presence of IAPs for the pixel to be assigned to the class (Value =8).
+
+# Stack your rasters
+rasters <- c(niaps, inv_cfr, mapwap, um)
+
+# Apply pixel-wise function using app(), not lapp() (change to strict in naming)
+inv_comb_strict <- app(rasters, fun = function(v) {
+  valid <- v[v != 99]
+  if (length(valid) == 0) {
+    return(0)  # No data from any layer
+  } else if (all(valid == 8)) {
+    return(8)  # All valid layers say "invaded"
+  } else {
+    return(0)  # Not all valid layers agree
+  }
+})
+
+
+
+# Strict 8 class LC: combine the rasters such that if lc = 1  AND inv = 8 then value in new raster = 8, else use value of lc. This creates a 8 class land cover 1=nat, 2=secnat, 3=artwater, 4=built, 5=crop, 6=mine, 7=plant, 8=invaded
+
+lc2022_inv_strict <-  ifel(inv_comb_strict == 8 & lc == 1, 8, lc)
+```
+
+```{r}
+# add the vegetation data and EOO and AOO data  and prepare for cross tabulation
+
+# add vegetation data
+veg <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_Change.gdb", "NVM2024Final_IEM5_12_07012025")  #ensure it uses proj =  wgs84 aea cm 25 -24 -33
+
+# to help differentiate masked areas (LES and SWA) from NON TERRESTRIAL areas add "NOTVEG" to T_MAPCODE where T_NAME = "Non-Terrestrial*"
+veg$T_MAPCODE <- ifelse(veg$T_Name == "Non-terrestrial (estuarine habitat)" | veg$T_Name == "Non-terrestrial (Aquatic)", "NOTVEG", veg$T_MAPCODE) 
+vegrast <- rasterize(veg,lc2022_inv_strict,"T_MAPCODE")
+
+```
+
+```{r}
+## Cross tabulate the 8 class land cover (which includes iaps) with the vegetation map to calculate key metrics for RLE (percent invasion per type). The key assumption is that since only high density invasions were included in the combined data sets (ie over 50% canopy cover) the severity of biotic disruption (required for use in Criterion D1 and D3) is assumed to be ~80% 
+
+#lc2022_inv_max <- rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Invasives/lc2022_inv_max.tif")  
+
+#Crosstab veg and lc2022_inv_max
+rall_inv_comb_max <- crosstab(c(lc2022_inv_max,vegrast), useNA=TRUE) #ensure NA areas included
+rall_inv_comb_max <- as_tibble(rall_inv_comb_max) 
+write.csv(rall_inv_comb_max, file = "outputs/rall_inv_max2.csv") 
+
+```
+
+```{r}
+# Clean up and summarise tables
+# import data to avoid spatial steps
+options(scipen =999)
+rall_inv_comb_max <- read_csv("outputs/rall_inv_max2.csv", show_col_types = FALSE)
+
+
+inv_max_tb <- rall_inv_comb_max %>%
+  mutate(km2 = (n*400)/1000000) %>% # add extent 10x10m pixels
+  rename(LC = nlc2022_7class) %>%
+  filter(n != 0, T_MAPCODE != "NOTVEG", !is.na(LC), !is.na(LC), LC != "NaN") %>%
+  select(-n,-...1) %>%  #the ...1 col is artifact of importation from csv
+  mutate(LC = as.integer(LC)) #IMPORTANT to make integers othewise ifelse does not work correctly below!
+
+inv_max_sum <- inv_max_tb %>%
+  pivot_wider(names_from = LC, 
+              values_from = km2, 
+              names_prefix = "lc_", 
+              values_fill = list(km2 = 0)) %>%
+  relocate(lc_7, .before =lc_8) %>%
+  mutate(ext_tot = rowSums(select(., lc_1:lc_8), na.rm = TRUE)) %>%
+  mutate(ext_rem = lc_1 + lc_8) %>%
+  mutate(prc_inv = 100*round(lc_8/ext_rem,2)) %>%
+   left_join(eoo, "T_MAPCODE") %>%
+  mutate(B1i_inv = case_when(EOO <= 2000 & prc_inv >= 30 ~ "CR", 
+                                  EOO <= 20000 & prc_inv >= 30 ~ "EN", 
+                                  EOO <= 50000 & prc_inv >= 30 ~ "VU", 
+                                  TRUE ~ "LC")) %>%
+  mutate(B2i_inv = case_when(AOO <= 2 & prc_inv >= 30 ~ "CR", 
+                                  AOO <= 20 & prc_inv >= 30 ~ "EN", 
+                                  AOO <= 50 & prc_inv >= 30 ~ "VU", 
+                                  TRUE ~ "LC")) %>%
+  mutate(D1_inv = case_when(prc_inv >= 80 ~ "CR",
+                   prc_inv >= 50 ~ "EN",
+                   prc_inv >= 30 ~ "VU",
+                  TRUE ~ "LC")) %>%
+  mutate(D3_inv = case_when(prc_inv >= 90 ~ "CR",
+                   prc_inv >= 70 ~ "EN",
+                   prc_inv >= 50 ~ "VU",
+                  TRUE ~ "LC"))
+  
+
+# Write results  
+ write.csv(inv_max_sum, file = "outputs/data_for_rle_inv_max2.csv") 
+```

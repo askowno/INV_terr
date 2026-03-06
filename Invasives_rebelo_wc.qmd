@@ -83,7 +83,7 @@ write.csv(inv_lc_veg_values, file = "outputs/inv_wc_lc_veg_values.csv")
 #--------------------------------------------------------------------
 # Start here: load values to avoid rerunning time consuming cross tab above
 
-inv_lc_veg_values <- read_csv("outputs/inv_wc_lc_veg_values.csv", show_col_types = FALSE)
+#inv_lc_veg_values <- read_csv("outputs/inv_wc_lc_veg_values.csv", show_col_types = FALSE)
 
 #Rename columns and add km2 (cell size is 10x10m), and make adjustments to values as required
 inv_lc_veg_tb <- inv_lc_veg_values %>%

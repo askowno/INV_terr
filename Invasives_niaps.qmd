@@ -47,7 +47,7 @@ lc2022 <- rast(lc2022_fp)
 
 # Note  all LC products use  WGS84 Albers Equal Area, central meridian = 25; std parallel1 = -24; std parallel2 = -33). Use Tif version as this is processed faster by R terra
 
-# add vegetation vector
+# Add vegetation vector
 
 # load veg data from esri gdb (note this is a folder not a file access route)
 gdb_path <- file.path(data_path, "NLC_change", "NLC_Change.gdb")

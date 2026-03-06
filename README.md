@@ -120,11 +120,11 @@ Workflow to collate percentage invasion and RLE assessment of Criterion D per Ve
 
 It draws on the primary outputs from workflows for NIAPS (INV_terr/Invasives_niaps.qmd), CFR IAT (Invasives_rebelo_wc.qmd), MAPWAPs (Invasives_mapwap.qmd), Umgeni_Tugela (Invasives_umngeni.qmd).
 
-### 6. Workflow for a combined raster of invasive alien plant data plus land cover 2022, for use in Ecosystem Protection Level and Red List of Threatened Species assessments.
+### 6. Workflow for a combined raster of invasive alien plant data plus land cover 2022 and 2018, for use in Ecosystem Protection Level and Red List of Threatened Species assessments.
 
-[Workflow for a single raster of IAP data (lc2022_inv_raster.qmd)](lc2022_inv_raster.qmd)
+[Workflow for a single raster of IAP data combined with land cover 2022 and 2018 (landcover_inv_raster.qmd)](lc2022_inv_raster.qmd)
 
-This workflow combines invasive alien plant data from various sources into a single raster coverage. This will be used as an alternative input layer in updated Red List of Threatened Plant and Amphibian assessments, terrestrial Red List of Ecosystems and terrestrial Ecosystem Protection Level Assessments for the National Biodiversity Assessment 2025.
+This workflow combines invasive alien plant data from various sources into a single raster coverage which is then combined with 7 class land cover 2022 and 2018. This will be used as an alternative input layer in updated Red List of Threatened Plant and Amphibian assessments, terrestrial Red List of Ecosystems and terrestrial Ecosystem Protection Level Assessments for the National Biodiversity Assessment 2025.
 
 #### Analysis and outputs:
 
@@ -135,4 +135,4 @@ The four IAP rasters were combined in two ways:
 
 These combined invasion rasters were combined with the 7 class national land cover 2022 such that if land cover Value = 1 (natural) and the combined invasion layer Value = 8 (invaded) then the output pixel value is = 8. If not then the land cover value was assigned. This results in a 8 class national land cover : 1 = natural, 2 = secondary natural(old fields), 3 = artificial water bodies, 4 = built up (infrastructure), 5 = croplands and orchards, 6 = mines and mine dumps, 7 = plantation forestry, 8 = invasive alien plant (high density).
 
-Using the "Max" approach the output is a raster **lc2022_inv_max.tif,** and using the "Strict" approach the output raster is a raster **lc2022_inv_strict.tif**
+Using the "Max" approach the output is a raster **lc2022_inv_max2.tif,** **lc2018_inv_maxt2.tif**
